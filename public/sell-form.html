@@ -1,0 +1,90 @@
+            <form id="sell-form" class="sub-category-list">
+                <!-- Location fields -->
+                <div class="field-label" data-translate="pin_code">Pin Code</div>
+                <input id="pin" class="input" data-translate="enter_pin" placeholder="Enter pin code" />
+
+                <div style="height:12px"></div>
+                <div class="field-label" data-translate="state">State</div>
+                <input id="state" class="input" data-translate="enter_state" placeholder="Enter state" />
+
+                <div style="height:12px"></div>
+                <div class="field-label" data-translate="city">City</div>
+                <input id="city" class="input" data-translate="enter_city" placeholder="Enter city" />
+
+                <div style="height:12px"></div>
+                <div class="field-label" data-translate="landmark">Landmark</div>
+                <input id="landmark" class="input" data-translate="enter_landmark" placeholder="Enter landmark (optional)" />
+
+                <div style="height:12px"></div>
+                <div class="field-label" data-translate="village_building_number">Village/Building Number</div>
+                <input id="village_building" class="input" data-translate="enter_village_building" placeholder="Enter village/building number" />
+
+                <div style="height:18px"></div>
+                <button type="button" id="detect-location-btn" class="action-btn" style="background:var(--meta-color); margin-bottom:10px;" data-translate="detect_my_location">Detect My Location</button>
+
+                <!-- Submit button -->
+                <button type="submit" class="action-btn" style="margin-top:20px;">Submit Pickup Request</button>
+            </form>
+
+            <script>
+                // Function to detect and fill location
+                async function detectAndFillLocation() {
+                    const detectLocationBtn = document.getElementById('detect-location-btn');
+                    if (!navigator.geolocation) {
+                        alert('Geolocation is not supported by your browser.');
+                        return;
+                    }
+
+                    if (detectLocationBtn) {
+                        detectLocationBtn.disabled = true;
+                        detectLocationBtn.textContent = 'Detecting Location...';
+                    }
+
+                    navigator.geolocation.getCurrentPosition(async (position) => {
+                        const { latitude, longitude } = position.coords;
+
+                        // Use Nominatim for reverse geocoding (free, no API key needed for this use)
+                        const apiUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
+
+                        try {
+                            const response = await fetch(apiUrl);
+                            const data = await response.json();
+
+                            if (data && data.address) {
+                                document.getElementById('pin').value = data.address.postcode || '';
+                                document.getElementById('state').value = data.address.state || '';
+                                document.getElementById('city').value = data.address.city || data.address.town || data.address.village || '';
+                                const village = data.address.village || data.address.suburb || '';
+                                document.getElementById('village_building').value = village;
+                            } else {
+                                alert('Could not determine address from your location.');
+                            }
+                        } catch (error) {
+                            console.error('Reverse geocoding failed:', error);
+                            alert('Failed to fetch address details. Please enter manually.');
+                        } finally {
+                            if (detectLocationBtn) {
+                                detectLocationBtn.disabled = false;
+                                detectLocationBtn.textContent = 'Detect My Location';
+                            }
+                        }
+                    }, (error) => {
+                        alert(`Error getting location: ${error.message}`);
+                        if (detectLocationBtn) {
+                            detectLocationBtn.disabled = false;
+                            detectLocationBtn.textContent = 'Detect My Location';
+                        }
+                    });
+                }
+
+                // Auto-fetch location on page load
+                document.addEventListener('DOMContentLoaded', () => {
+                    detectAndFillLocation();
+                });
+
+                // Manual detect location button
+                const detectLocationBtn = document.getElementById('detect-location-btn');
+                if (detectLocationBtn) {
+                    detectLocationBtn.addEventListener('click', detectAndFillLocation);
+                }
+            </script>

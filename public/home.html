@@ -1,0 +1,860 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title><span data-translate="app_name">Ecovera</span> Dashboard</title>
+    <style>
+        :root {
+            --deep-green: #2fa84f;
+            --green: #34A853; 
+            --light-green: #e6f7ea;
+            --text-color: #333;
+            --meta-color: #777;
+            --border-color: #eee;
+            --bg-color: #f8f8f8;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding-bottom: 70px;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        /* --- Header Bar Styles --- */
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            position: relative; 
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            color: var(--deep-green);
+        }
+
+        .logo .leaf {
+            font-size: 24px;
+            margin-right: 4px;
+        }
+
+        .icons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            padding: 6px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        /* --- Profile Menu Dropdown Styles --- */
+        .dropdown-menu {
+            position: absolute;
+            top: 50px;
+            right: 0px;
+            width: 220px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            padding: 10px 0;
+            display: none;
+        }
+
+        .dropdown-menu.active {
+            display: block;
+        }
+
+        .menu-header {
+            padding: 8px 16px 12px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .menu-item {
+            display: block;
+            padding: 10px 16px;
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 14px;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .menu-item:hover {
+            background: #f7f7f7;
+        }
+
+        .menu-item.logout {
+            color: #e74c3c;
+            margin-top: 8px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* --- General Card & Input Styles --- */
+        .input-card, .list-card {
+            background: #fff;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 12px;
+        }
+
+        .input {
+            width: 100%;
+            border: none;
+            font-size: 16px;
+            padding: 0;
+            outline: none;
+        }
+
+        .item-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .meta {
+            color: var(--meta-color);
+            font-size: 14px;
+        }
+
+        .field-label {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--meta-color);
+            margin-bottom: 8px;
+        }
+
+        /* Input field styling for forms */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        
+        /* --- Dashboard Grid Styles --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat {
+            background: #fff;
+            padding: 16px;
+            border-radius: 16px;
+            text-align: left;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            cursor: pointer; 
+            transition: transform 0.1s;
+        }
+
+        .stat:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat .num {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 8px;
+            color: var(--green);
+        }
+
+        .stat .label {
+            font-size: 13px;
+            color: var(--meta-color);
+        }
+
+        /* --- Buttons --- */
+        .action-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border-radius: 25px; 
+            background: var(--green); 
+            color: white;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(52, 168, 83, 0.3);
+            transition: background 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #238a3d;
+        }
+        
+        .section-btn {
+             border-radius: 12px !important;
+             box-shadow: none !important;
+        }
+
+        /* --- Section Management (SPA) --- */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* --- Sell Scrap Category Cards --- */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .category-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 18px 12px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.1s;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .category-item:hover {
+            transform: scale(1.02);
+        }
+
+        .category-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .price-meta {
+            font-size: 12px;
+            color: var(--meta-color);
+            font-weight: normal;
+        }
+
+        /* Sub-category list style */
+        .sub-category-list .list-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer; 
+        }
+        
+        .sub-category-list .list-card:hover {
+            background: #f7f7f7;
+        }
+
+        .sub-category-list .price-tag {
+            font-weight: 700;
+            color: var(--green);
+        }
+        
+        /* Specific waste type list item (to be toggled by JS) */
+        .waste-type {
+            display: none; 
+        }
+        .waste-type.active {
+            display: block;
+        }
+
+        
+        /* --- Bottom Navigation --- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            background: white;
+            padding: 10px 0;
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+            z-index: 50;
+        }
+
+        .nav-item {
+            text-decoration: none;
+            color: var(--meta-color);
+            font-size: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 5px;
+            transition: color 0.2s;
+        }
+
+
+
+        .nav-item div:first-child {
+            font-size: 22px;
+        }
+
+        .nav-item.active {
+            color: var(--green);
+        }
+
+    </style>
+</head>
+<body>
+    <div id="home" class="container">
+
+        <div class="header-bar">
+            <div class="logo"><div class="leaf">🍃</div><span data-translate="app_name">Ecovera</span></div>
+            <div class="icons">
+                <button id="language-btn" class="icon-btn">🌐</button>
+                <button id="profile-btn" class="icon-btn">👤</button>
+            </div>
+             <div id="profile-menu" class="dropdown-menu">
+                <div class="menu-header">
+                    <div id="menu-user-name" style="font-weight:700" data-translate="name">Name</div>
+                    <div id="menu-user-email" class="meta" style="font-size:12px" data-translate="email">Email</div>
+                </div>
+                <div class="menu-item" data-flow="edit-profile" data-translate="edit_profile">Edit Profile</div>
+                <div class="menu-item" data-flow="saved-address" data-translate="saved_address">Saved Address</div>
+                <div class="menu-item logout" data-translate="logout">Logout</div>
+            </div>
+        </div>
+
+        <section id="overview" class="section active">
+            <div class="input-card" style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+                <div style="width:36px;height:36px;border-radius:12px;background:rgba(47,168,79,0.06);display:flex;align-items:center;justify-content:center">📍</div>
+                <div data-translate="your_location">Your location</div>
+            </div>
+
+            <div id="greeting-container" style="font-size:28px;font-weight:800;margin-bottom:14px">
+                <span id="timeGreeting">Good Afternoon</span> <span id="userName">Friend</span> <span id="greetingEmoji">😊</span>
+            </div>
+            
+            <div class="grid">
+                <div class="stat" data-detail="earnings"><div style="font-size:28px">💰</div><div class="num">₹0.00</div><div class="label" data-translate="earned_so_far">Earned So Far</div></div>
+                <div class="stat" data-detail="waste-list"><div style="font-size:28px">📦</div><div class="num">0.0 kg</div><div class="label" data-translate="waste">Waste</div></div>
+                <div class="stat" data-detail="pickups-status"><div style="font-size:28px">⚡</div><div class="num">0</div><div class="label" data-translate="pickups">Pickups</div></div>
+                <div class="stat" data-detail="trees-saved"><div style="font-size:28px">🌳</div><div class="num">0</div><div class="label" data-translate="trees_saved">Trees Saved</div></div>
+            </div>
+
+
+        </section>
+
+        <section id="sell" class="section" style="margin-top:26px">
+            <div style="font-size:28px;font-weight:800;margin-bottom:8px" data-translate="sell_scrap">Sell Scrap</div>
+            <div class="input-card" style="margin-bottom:14px;">
+                <input class="input" data-translate="search_waste" placeholder="Search waste types" />
+            </div>
+
+            <div class="field-label" style="margin-top:6px" data-translate="categories_prices">Categories & Prices</div>
+
+            <div class="category-grid">
+                <a href="#" class="category-item" data-flow="sell-details-paper">
+                    <div class="category-icon">📰</div>
+                    <div data-translate="paper">**Paper**</div>
+                    <div class="price-meta" data-translate="paper_desc">Cardboard, Books...</div>
+                </a>
+                <a href="#" class="category-item" data-flow="sell-details-metal">
+                    <div class="category-icon">🔩</div>
+                    <div data-translate="metal">**Metal**</div>
+                    <div class="price-meta" data-translate="metal_desc">Iron, Copper, Steel...</div>
+                </a>
+                <a href="#" class="category-item" data-flow="sell-details-plastic">
+                    <div class="category-icon">🥤</div>
+                    <div data-translate="plastic">**Plastic**</div>
+                    <div class="price-meta" data-translate="plastic_desc">Bottles, Dairy Packets...</div>
+                </a>
+                <a href="#" class="category-item" data-flow="sell-details-glass">
+                    <div class="category-icon">🥂</div>
+                    <div data-translate="glass">**Glass**</div>
+                    <div class="price-meta" data-translate="glass_desc">Glass Bottles...</div>
+                </a>
+            </div>
+        </section>
+
+        <section id="orders" class="section" style="margin-top:26px">
+            <div style="font-size:28px;font-weight:800;margin-bottom:8px" data-translate="orders">Orders</div>
+            <div id="noOrders" style="text-align:center; color:var(--meta-color); margin-top:40px;">No orders yet</div>
+            <div id="ordersContainer"></div>
+        </section>
+
+        <section id="sell-details" class="section" style="margin-top:26px">
+            <div style="font-size:28px;font-weight:800;margin-bottom:8px" id="detail-title" data-translate="category_details">Category Details</div>
+
+            <div style="height:12px"></div>
+
+            <div class="input-card" style="margin-bottom:14px;">
+                <input class="input" data-translate="search_specific" placeholder="Search a specific type (e.g., Newspaper)" />
+            </div>
+            
+            <div class="sub-category-list">
+
+                <div class="waste-type" data-category="paper">
+                    <div class="field-label" data-translate="paper_pricing">📰 Paper Pricing</div>
+                    <div class="list-card" data-flow="upload-waste-1" data-waste-type="Cardboard" data-price="12" data-trees="0.017">
+                        <div class="waste-info">
+                            <div class="item-title" data-translate="cardboard">Cardboard</div>
+                            <div class="price-tag">₹12 / kg</div>
+                        </div>
+                        <div class="quantity-input" style="margin-top:10px">
+                            <label data-translate="quantity_kg">Quantity (kg):</label>
+                            <input type="number" step="0.1" min="0" class="waste-quantity" style="width:80px" />
+                            <div class="estimated-price" style="color:var(--green);font-weight:600;margin-top:5px"></div>
+                        </div>
+                    </div>
+                    <div class="list-card" data-flow="upload-waste-1" data-waste-type="Newspaper" data-price="15" data-trees="0.02">
+                        <div class="waste-info">
+                            <div class="item-title" data-translate="newspaper">Newspaper</div>
+                            <div class="price-tag">₹15 / kg</div>
+                        </div>
+                        <div class="quantity-input" style="margin-top:10px">
+                            <label data-translate="quantity_kg">Quantity (kg):</label>
+                            <input type="number" step="0.1" min="0" class="waste-quantity" style="width:80px" />
+                            <div class="estimated-price" style="color:var(--green);font-weight:600;margin-top:5px"></div>
+                        </div>
+                    </div>
+                    <div class="list-card" data-flow="upload-waste-1" data-waste-type="Books" data-price="8" data-trees="0.015">
+                        <div class="waste-info">
+                            <div class="item-title" data-translate="books">Books</div>
+                            <div class="price-tag">₹8 / kg</div>
+                        </div>
+                        <div class="quantity-input" style="margin-top:10px">
+                            <label data-translate="quantity_kg">Quantity (kg):</label>
+                            <input type="number" step="0.1" min="0" class="waste-quantity" style="width:80px" />
+                            <div class="estimated-price" style="color:var(--green);font-weight:600;margin-top:5px"></div>
+                        </div>
+                    </div>
+                    <div class="list-card" data-flow="upload-waste-1" data-waste-type="Mixed Paper" data-price="6" data-trees="0.01">
+                        <div class="waste-info">
+                            <div class="item-title" data-translate="mixed_paper">Mixed Paper</div>
+                            <div class="price-tag">₹6 / kg</div>
+                        </div>
+                        <div class="quantity-input" style="margin-top:10px">
+                            <label data-translate="quantity_kg">Quantity (kg):</label>
+                            <input type="number" step="0.1" min="0" class="waste-quantity" style="width:80px" />
+                            <div class="estimated-price" style="color:var(--green);font-weight:600;margin-top:5px"></div>
+                        </div>
+                    </div>
+                    <div class="list-card" data-flow="upload-waste-1" data-waste-type="Magazines" data-price="10" data-trees="0.015">
+                        <div class="waste-info">
+                            <div class="item-title" data-translate="magazines">Magazines</div>
+                            <div class="price-tag">₹10 / kg</div>
+                        </div>
+                        <div class="quantity-input" style="margin-top:10px">
+                            <label data-translate="quantity_kg">Quantity (kg):</label>
+                            <input type="number" step="0.1" min="0" class="waste-quantity" style="width:80px" />
+                            <div class="estimated-price" style="color:var(--green);font-weight:600;margin-top:5px"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="waste-type" data-category="metal">
+                    <div class="field-label" data-translate="metal_pricing">🔩 Metal Pricing</div>
+                    <div class="list-card" data-flow="upload-waste-1" data-waste-type="Iron" data-price="25" data-trees="0.05">
+                        <div class="waste-info">
+                            <div class="item-title" data-translate="iron">Iron</div>
+                            <div class="price-tag">₹25 / kg</div>
+                        </div>
+                        <div class="quantity-input" style="margin-top:10px">
+                            <label data-translate="quantity_kg">Quantity (kg):</label>
+                            <input type="number" step="0.1" min="0" class="waste-quantity" style="width:80px" />
+                            <div class="estimated-price" style="color:var(--green);font-weight:600;margin-top:5px"></div>
+                        </div>
+                    </div>
+                    <div class="list-card" data-flow="upload-waste-1" data-waste-type="Copper" data-price="450" data-trees="0.08">
+                        <div class="waste-info">
+                            <div class="item-title" data-translate="copper">Copper</div>
+                            <div class="price-tag">₹450 / kg</div>
+                        </div>
+                        <div class="quantity-input" style="margin-top:10px">
+                            <label data-translate="quantity_kg">Quantity (kg):</label>
+                            <input type="number" step="0.1" min="0" class="waste-quantity" style="width:80px" />
+                            <div class="estimated-price" style="color:var(--green);font-weight:600;margin-top:5px"></div>
+                        </div>
+                    </div>
+                    <div class="list-card" data-flow="upload-waste-1" data-waste-type="Steel" data-price="20" data-trees="0.04">
+                        <div class="waste-info">
+                            <div class="item-title" data-translate="steel">Steel</div>
+                            <div class="price-tag">₹20 / kg</div>
+                        </div>
+                        <div class="quantity-input" style="margin-top:10px">
+                            <label data-translate="quantity_kg">Quantity (kg):</label>
+                            <input type="number" step="0.1" min="0" class="waste-quantity" style="width:80px" />
+                            <div class="estimated-price" style="color:var(--green);font-weight:600;margin-top:5px"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="waste-type" data-category="plastic">
+                    <div class="field-label" data-translate="plastic_pricing">🥤 Plastic Pricing</div>
+                    <div class="list-card" data-flow="upload-waste-1" data-waste-type="Mixed Plastics" data-price="5" data-trees="0.03">
+                        <div class="waste-info">
+                            <div class="item-title" data-translate="mixed_plastics">Mixed Plastics</div>
+                            <div class="price-tag">₹5 / kg</div>
+                        </div>
+                        <div class="quantity-input" style="margin-top:10px">
+                            <label data-translate="quantity_kg">Quantity (kg):</label>
+                            <input type="number" step="0.1" min="0" class="waste-quantity" style="width:80px" />
+                            <div class="estimated-price" style="color:var(--green);font-weight:600;margin-top:5px"></div>
+                        </div>
+                    </div>
+                    <div class="list-card" data-flow="upload-waste-1" data-waste-type="Plastic Bottles" data-price="8" data-trees="0.04">
+                        <div class="waste-info">
+                            <div class="item-title" data-translate="plastic_bottles_pet">Plastic Bottles (PET)</div>
+                            <div class="price-tag">₹8 / kg</div>
+                        </div>
+                        <div class="quantity-input" style="margin-top:10px">
+                            <label data-translate="quantity_kg">Quantity (kg):</label>
+                            <input type="number" step="0.1" min="0" class="waste-quantity" style="width:80px" />
+                            <div class="estimated-price" style="color:var(--green);font-weight:600;margin-top:5px"></div>
+                        </div>
+                    </div>
+                    <div class="list-card" data-flow="upload-waste-1" data-waste-type="Dairy Packets" data-price="15" data-trees="0.02">
+                        <div class="waste-info">
+                            <div class="item-title" data-translate="dairy_packets_ldpe">Dairy Packets (LDPE)</div>
+                            <div class="price-tag">₹15 / kg</div>
+                        </div>
+                        <div class="quantity-input" style="margin-top:10px">
+                            <label data-translate="quantity_kg">Quantity (kg):</label>
+                            <input type="number" step="0.1" min="0" class="waste-quantity" style="width:80px" />
+                            <div class="estimated-price" style="color:var(--green);font-weight:600;margin-top:5px"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="waste-type" data-category="glass">
+                    <div class="field-label" data-translate="glass_pricing">🥂 Glass Pricing</div>
+                    <div class="list-card" data-flow="upload-waste-1" data-waste-type="Glass Bottles" data-price="3" data-trees="0.01">
+                        <div class="waste-info">
+                            <div class="item-title" data-translate="glass_bottles">Glass Bottles</div>
+                            <div class="price-tag">₹3 / kg</div>
+                        </div>
+                        <div class="quantity-input" style="margin-top:10px">
+                            <label data-translate="quantity_kg">Quantity (kg):</label>
+                            <input type="number" step="0.1" min="0" class="waste-quantity" style="width:80px" />
+                            <div class="estimated-price" style="color:var(--green);font-weight:600;margin-top:5px"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display:flex; gap:12px; margin-top:20px;">
+                <button class="action-btn" id="submit-pickup-btn" style="flex:1; border-radius:12px;">Submit Pickup Request</button>
+                <button class="action-btn" data-flow="sell" style="flex:1; background:var(--meta-color); border-radius:12px;" data-translate="go_back_to_categories">Go Back</button>
+            </div>
+        </section>
+
+
+
+
+        <section id="upload-waste-1" class="section" style="margin-top:26px">
+            <div style="font-size:28px;font-weight:800;margin-bottom:8px" data-translate="upload_waste_1">Upload Waste (1/2)</div>
+
+            <div style="height:12px"></div>
+
+            <div class="input-card">
+                <div class="form-group">
+                    <label data-translate="waste_type">Waste Type</label>
+                    <input type="text" id="upload-waste-type" value="" readonly />
+                </div>
+                <div class="form-group">
+                    <label data-translate="estimated_quantity_kg">Estimated Quantity (kg)</label>
+                    <input type="number" step="0.1" id="upload-waste-quantity" data-translate="quantity_placeholder" placeholder="e.g., 5.5 kg" />
+                </div>
+                <div class="form-group">
+                    <label data-translate="estimated_price">Estimated Price</label>
+                    <input type="text" id="upload-estimated-price" value="" readonly style="background-color: #f5f5f5;" />
+                </div>
+            </div>
+
+            <button class="action-btn" data-flow="upload-waste-2" data-translate="continue">Continue</button>
+        </section>
+
+        <section id="upload-waste-2" class="section" style="margin-top:26px">
+            <div style="font-size:28px;font-weight:800;margin-bottom:8px" data-translate="confirm_pickup_2">Confirm Pickup (2/2)</div>
+
+            <div style="height:12px"></div>
+
+            <div class="input-card">
+                <div class="field-label" data-translate="pickup_address">Pickup Address</div>
+                <div class="meta" id="pickup-address">
+                    Location not set
+                </div>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button type="button" id="detect-location-btn" class="action-btn" style="flex:1; background:var(--meta-color); border-radius:12px; padding:8px 12px; font-size:14px;">Detect My Location</button>
+                    <a href="#" data-flow="saved-address" style="color:var(--green);font-size:14px;font-weight:600; align-self:center;" data-translate="change_address">Change Address</a>
+                </div>
+            </div>
+
+            <button class="action-btn" data-flow="submit-waste" data-translate="submit_pickup_request">Submit Pickup Request</button>
+        </section>
+        
+        <section id="edit-profile" class="section" style="margin-top:26px">
+            <div style="font-size:28px;font-weight:800;margin-bottom:8px" data-translate="edit_profile">Edit Profile</div>
+
+            <div style="height:12px"></div>
+
+            <div class="input-card">
+                <div class="form-group">
+                    <label data-translate="name">Name</label>
+                    <input type="text" id="edit-name" />
+                </div>
+                <div class="form-group">
+                    <label data-translate="email">Email</label>
+                    <input type="email" id="edit-email" />
+                </div>
+                <div class="form-group">
+                    <label data-translate="mobile_number">Mobile Number</label>
+                    <input type="tel" id="edit-mobile" />
+                </div>
+            </div>
+
+            <div style="display:flex;gap:12px;">
+                <button class="action-btn" style="flex:1;" data-flow="save-profile" data-translate="save_changes">Save Changes</button>
+                <button class="action-btn" style="flex:1; background: #e74c3c;" data-flow="delete-account" data-translate="delete_account">Delete Account</button>
+            </div>
+
+        </section>
+        
+        <section id="saved-address" class="section" style="margin-top:26px">
+            <div style="font-size:28px;font-weight:800;margin-bottom:8px" data-translate="saved_address">Saved Address</div>
+
+            <div style="height:12px"></div>
+
+            <div class="list-card">
+                 <div class="item-title" data-translate="default_address_current">Default Address (Current)</div>
+                 <div class="meta">Flat 101, Green Apartments, Brigade Road, Bengaluru - 560001</div>
+                 <div style="display:flex; gap:10px; margin-top:10px;">
+            </div>
+
+            <button class="action-btn" data-flow="edit-address" style="margin-top:20px; border-radius:12px;" data-translate="edit_address">Edit Address</button>
+
+            <button class="action-btn" data-flow="overview" style="margin-top:20px; background:var(--meta-color); border-radius:12px;" data-translate="go_back_to_dashboard">Go Back to Dashboard</button>
+
+        </section>
+        
+        <section id="add-new-address" class="section" style="margin-top:26px">
+            <div style="font-size:28px;font-weight:800;margin-bottom:8px" data-translate="add_new_address">Add New Address</div>
+
+            <div style="height:12px"></div>
+
+            <div class="input-card">
+                <div class="form-group">
+                    <label data-translate="pin_code">Pin Code</label>
+                    <input type="text" id="new-pin" data-translate="enter_pin" placeholder="Enter pin code" />
+                </div>
+                <div class="form-group">
+                    <label data-translate="state">State</label>
+                    <input type="text" id="new-state" data-translate="enter_state" placeholder="Enter state" />
+                </div>
+                <div class="form-group">
+                    <label data-translate="city">City</label>
+                    <input type="text" id="new-city" data-translate="enter_city" placeholder="Enter city" />
+                </div>
+                <div class="form-group">
+                    <label data-translate="landmark">Landmark</label>
+                    <input type="text" id="new-landmark" data-translate="enter_landmark" placeholder="Enter landmark (optional)" />
+                </div>
+                <div class="form-group">
+                    <label data-translate="house_no">House No / Village</label>
+                    <input type="text" id="new-hno" data-translate="enter_house" placeholder="Enter house number or village" />
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="set-default" style="width:auto; margin-right:8px;" checked />
+                    <label for="set-default" style="display:inline; font-weight:400;" data-translate="set_as_default_pickup_address">Set as default pickup address</label>
+                </div>
+            </div>
+
+            <button class="action-btn" data-flow="save-address-submit" data-translate="save_address">Save Address</button>
+        </section>
+
+    </div>
+
+    <div class="bottom-nav">
+        <a href="#" class="nav-item active" data-target="overview">
+            <div>🏠</div><div data-translate="home">Home</div>
+        </a>
+        <a href="#" class="nav-item" data-target="sell">
+            <div>📦</div><div data-translate="sell_scrap">Sell Scrap</div>
+        </a>
+    </div>
+
+    <div id="language-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: white; padding: 20px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
+            <h3 data-translate="language_title">Select Your Language</h3>
+            <p data-translate="language_subtitle">Choose your preferred language from the options below</p>
+            <div class="lang-options" style="display: flex; flex-direction: column; gap: 10px; margin: 20px 0;">
+                <button class="lang-btn" data-lang="en" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;" data-translate="english">English</button>
+                <button class="lang-btn" data-lang="kn" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;" data-translate="kannada">ಕನ್ನಡ (Kannada)</button>
+                <button class="lang-btn" data-lang="hi" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;" data-translate="hindi">हिन्दी (Hindi)</button>
+            </div>
+            <button id="close-modal" style="padding: 10px 20px; background: var(--green); color: white; border: none; border-radius: 8px;" data-translate="close">Close</button>
+        </div>
+    </div>
+
+    <script src="translations.js"></script>
+    <script defer src="app.js"></script>
+</body>
+
+<script>
+    // Location detection for pickup address
+    document.addEventListener('DOMContentLoaded', () => {
+        const detectLocationBtn = document.getElementById('detect-location-btn');
+        if (detectLocationBtn) {
+            detectLocationBtn.addEventListener('click', () => {
+                if (!navigator.geolocation) {
+                    alert('Geolocation is not supported by your browser.');
+                    return;
+                }
+
+                detectLocationBtn.disabled = true;
+                detectLocationBtn.textContent = 'Detecting...';
+
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const { latitude, longitude } = position.coords;
+
+                    // Use Nominatim for reverse geocoding (free, no API key needed)
+                    const apiUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
+
+                    try {
+                        const response = await fetch(apiUrl);
+                        const data = await response.json();
+
+                        if (data && data.address) {
+                            const pickupAddressEl = document.getElementById('pickup-address');
+                            const addressParts = [
+                                data.address.house_number || '',
+                                data.address.road || '',
+                                data.address.suburb || '',
+                                data.address.city || data.address.town || data.address.village || '',
+                                data.address.state || '',
+                                data.address.postcode || ''
+                            ].filter(Boolean);
+
+                            pickupAddressEl.textContent = addressParts.join(', ');
+
+                            // Store the coordinates for later use
+                            pickupAddressEl.dataset.latitude = latitude;
+                            pickupAddressEl.dataset.longitude = longitude;
+                        } else {
+                            alert('Could not determine address from your location.');
+                        }
+                    } catch (error) {
+                        console.error('Reverse geocoding failed:', error);
+                        alert('Failed to fetch address details. Please enter manually.');
+                    } finally {
+                        detectLocationBtn.disabled = false;
+                        detectLocationBtn.textContent = 'Detect My Location';
+                    }
+                }, (error) => {
+                    alert(`Error getting location: ${error.message}`);
+                    detectLocationBtn.disabled = false;
+                    detectLocationBtn.textContent = 'Detect My Location';
+                });
+            });
+        }
+
+        const submitPickupBtn = document.getElementById('submit-pickup-btn');
+        if (submitPickupBtn) {
+            submitPickupBtn.addEventListener('click', async () => {
+                const selectedItems = [];
+                // Find all items with a quantity entered
+                document.querySelectorAll('#sell-details .waste-quantity').forEach(input => {
+                    const quantity = parseFloat(input.value) || 0;
+                    if (quantity > 0) {
+                        const card = input.closest('.list-card');
+                        selectedItems.push({
+                            type: card.querySelector('.item-title').textContent.trim(),
+                            quantity: quantity,
+                            pricePerKg: parseFloat(card.dataset.price),
+                            treesPerKg: parseFloat(card.dataset.trees)
+                        });
+                    }
+                });
+
+                if (selectedItems.length === 0) {
+                    alert("Please enter a quantity for at least one waste type.");
+                    return;
+                }
+
+                // Get address from the pickup-address element
+                const pickupAddressEl = document.getElementById('pickup-address');
+                const address = pickupAddressEl.textContent.trim();
+
+                if (!address || address === 'Location not set') {
+                    alert("Please set your pickup address using 'Detect My Location' or 'Change Address'.");
+                    return;
+                }
+
+                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                if (!user.mobile) {
+                    alert("User session not found. Please start over.");
+                    return;
+                }
+
+                // The saveOrder function in app.js has a dependency on user.email, which we don't have.
+                // So, we'll call the API directly here.
+                const totalQuantity = selectedItems.reduce((sum, item) => sum + item.quantity, 0);
+                const wasteType = selectedItems.map(item => item.type).join(', ');
+
+                const response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, wasteType, quantity: totalQuantity, address, status: 'pending' })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Pickup request submitted successfully! Recyclers can now see your order.');
+                    window.location.reload(); // Refresh to clear form and see updated stats
+                } else {
+                    alert('Failed to submit order: ' + (result.error || 'Please try again.'));
+                }
+            });
+        }
+    });
+</script>
+</html>

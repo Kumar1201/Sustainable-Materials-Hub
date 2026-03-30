@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Profile</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="translations.js"></script>
+  <script defer src="user.js"></script>
+  <script defer src="profile_handler.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="logo"><div class="leaf">🍃</div>Ecovera</div>
+
+    <div class="title" data-translate="profile_title">Complete Profile</div>
+    <div class="subtitle" data-translate="profile_subtitle">Tell us a bit about yourself</div>
+
+    <form id="profileForm" class="input-card" style="margin-top:18px;">
+      <div class="field-label" data-translate="full_name">Name</div>
+      <input id="name" class="input" data-translate="enter_name" placeholder="Enter your name" required />
+      <div style="height:14px"></div>
+
+      <div class="field-label" data-translate="email">Email</div>
+      <input id="email" class="input" type="email" data-translate="enter_email" placeholder="Enter your email" required />
+      <div style="height:14px"></div>
+
+
+      <div style="height:22px"></div>
+      <button class="action-btn" type="submit" data-translate="continue">Continue</button>
+    </form>
+  </div>
+
+  <div id="language-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="modal-content" style="background: white; padding: 20px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
+      <h3 data-translate="language_title">Select Your Language</h3>
+      <p data-translate="language_subtitle">Choose your preferred language from the options below</p>
+      <div class="lang-options" style="display: flex; flex-direction: column; gap: 10px; margin: 20px 0;">
+        <button class="lang-btn" data-lang="en" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">English</button>
+        <button class="lang-btn" data-lang="kn" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">ಕನ್ನಡ (Kannada)</button>
+        <button class="lang-btn" data-lang="hi" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">हिन्दी (Hindi)</button>
+      </div>
+      <button id="close-modal" style="padding: 10px 20px; background: var(--green); color: white; border: none; border-radius: 8px;" data-translate="close">Close</button>
+    </div>
+  </div>
+</body>
+</html>

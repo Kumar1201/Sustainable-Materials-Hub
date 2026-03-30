@@ -1,0 +1,232 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Settings</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="translations.js"></script>
+  <script defer src="user.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="logo"><div class="leaf">🍃</div><span data-translate="app_name">Ecovera</span></div>
+
+    <div class="title" data-translate="settings_title">Settings</div>
+    <div class="subtitle" data-translate="settings_subtitle">Manage your account preferences</div>
+
+    <div class="settings-section">
+      <div class="setting-item">
+        <div class="setting-label" data-translate="language_setting">Language</div>
+        <div class="setting-value" id="current-language">English</div>
+        <button class="setting-btn" id="change-language" data-translate="change">Change</button>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-label" data-translate="notifications_setting">Notifications</div>
+        <div class="setting-value">
+          <label class="toggle">
+            <input type="checkbox" id="notifications-toggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-label" data-translate="profile_setting">Profile</div>
+        <div class="setting-value" id="profile-summary">Update your personal information</div>
+        <button class="setting-btn" onclick="window.location.href='profile.html'" data-translate="edit">Edit</button>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-label" data-translate="location_setting">Location</div>
+        <div class="setting-value" id="location-summary">Manage your pickup addresses</div>
+        <button class="setting-btn" onclick="window.location.href='location.html'" data-translate="manage">Manage</button>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-label" data-translate="privacy_setting">Privacy</div>
+        <div class="setting-value">Control your data sharing preferences</div>
+        <button class="setting-btn" data-translate="manage">Manage</button>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-label" data-translate="help_support">Help & Support</div>
+        <div class="setting-value">Get help and contact support</div>
+        <button class="setting-btn" data-translate="view">View</button>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-label" data-translate="about_app">About Ecovera</div>
+        <div class="setting-value">Version 1.0.0</div>
+        <button class="setting-btn" data-translate="view">View</button>
+      </div>
+    </div>
+
+    <div class="danger-zone">
+      <button class="danger-btn" id="logout-btn" data-translate="logout">Logout</button>
+    </div>
+
+    <!-- Language Selection Modal -->
+    <div id="language-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+      <div class="modal-content" style="background: white; padding: 20px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
+        <h3 data-translate="language_title">Select Your Language</h3>
+        <p data-translate="language_subtitle">Choose your preferred language from the options below</p>
+        <div class="lang-options" style="display: flex; flex-direction: column; gap: 10px; margin: 20px 0;">
+          <button class="lang-btn" data-lang="en" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">English</button>
+          <button class="lang-btn" data-lang="kn" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">ಕನ್ನಡ (Kannada)</button>
+          <button class="lang-btn" data-lang="hi" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">हिन्दी (Hindi)</button>
+        </div>
+        <button id="close-modal" style="padding: 10px 20px; background: var(--green); color: white; border: none; border-radius: 8px;" data-translate="close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .settings-section {
+      margin-top: 20px;
+    }
+
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .setting-label {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .setting-value {
+      flex: 1;
+      margin: 0 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .setting-btn {
+      background: var(--green);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .toggle {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background-color: var(--green);
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(26px);
+    }
+
+    .danger-zone {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+
+    .danger-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Load current language
+      const currentLang = localStorage.getItem('selectedLanguage') || 'en';
+      const langNames = { en: 'English', kn: 'ಕನ್ನಡ', hi: 'हिन्दी' };
+      document.getElementById('current-language').textContent = langNames[currentLang] || 'English';
+
+      // Language change modal
+      const languageModal = document.getElementById('language-modal');
+      const changeLangBtn = document.getElementById('change-language');
+      const closeModalBtn = document.getElementById('close-modal');
+
+      changeLangBtn.addEventListener('click', () => {
+        languageModal.style.display = 'flex';
+      });
+
+      closeModalBtn.addEventListener('click', () => {
+        languageModal.style.display = 'none';
+      });
+
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const lang = btn.getAttribute('data-lang');
+          localStorage.setItem('selectedLanguage', lang);
+          applyTranslations(lang);
+          document.getElementById('current-language').textContent = langNames[lang];
+          languageModal.style.display = 'none';
+        });
+      });
+
+      // Logout functionality
+      document.getElementById('logout-btn').addEventListener('click', () => {
+        if (confirm('Are you sure you want to logout?')) {
+          sessionStorage.clear();
+          window.location.href = 'language.html';
+        }
+      });
+
+      // Load user profile summary
+      const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+      if (user.name) {
+        document.getElementById('profile-summary').textContent = `${user.name} - ${user.email || 'No email'}`;
+      }
+
+      // Load location summary
+      if (user.city) {
+        document.getElementById('location-summary').textContent = `${user.city}, ${user.state || ''}`;
+      }
+    });
+  </script>
+</body>
+</html>

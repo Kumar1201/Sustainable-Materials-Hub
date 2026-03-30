@@ -1,0 +1,454 @@
+// user.js - Frontend API integration for Ecovera app
+document.addEventListener("DOMContentLoaded", () => {
+
+    // API Base URL - use localhost for development. Matches server default (5510) to avoid editor live-server conflicts.
+    const API_BASE = 'http://localhost:5510';
+
+    // Helper function to make API calls
+    async function apiCall(endpoint, options = {}) {
+        const url = `${API_BASE}${endpoint}`;
+        const config = {
+            mode: 'cors',
+            cache: 'no-cache',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            ...options,
+            // Ensure headers are merged correctly
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                ...(options.headers || {})
+            }
+        };
+
+        const authToken = sessionStorage.getItem('authToken');
+        if (authToken && !config.headers.Authorization) {
+            config.headers.Authorization = `Bearer ${authToken}`;
+        }
+
+        try {
+            const response = await fetch(url, config);
+
+            // read raw text first to handle empty or non-json responses
+            const text = await response.text();
+
+            // if empty body
+            if (!text) {
+                if (!response.ok) throw new Error(`HTTP ${response.status} (empty response)`);
+                return {};
+            }
+
+            // try parse JSON
+            let data;
+            const contentType = response.headers.get('content-type') || '';
+            if (contentType.includes('application/json') || text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                try {
+                    data = JSON.parse(text);
+                } catch (parseErr) {
+                    console.error('Failed to parse JSON response from', url, 'text:', text);
+                    throw new Error('Invalid JSON response from server');
+                }
+            } else {
+                // non-JSON response
+                if (!response.ok) {
+                    const error = new Error(`HTTP ${response.status}: ${text}`);
+                    throw error;
+                }
+                return text;
+            }
+
+            if (!response.ok) {
+                // Throw an error, but attach the full data object for more context
+                const error = new Error(data.error || `HTTP ${response.status}`);
+                error.data = data; // Attach full response data
+                throw error;
+            }
+
+            return data;
+        } catch (error) {
+            console.error('API call failed:', error);
+            // Re-throw the error to be caught by the calling function
+            throw error;
+        }
+    }
+
+
+
+    // OTP login handler
+    const mobileForm = document.getElementById('mobileForm');
+    const mobileInput = document.getElementById('mobile');
+    const continueBtn = document.getElementById('continueBtn');
+
+    if (mobileForm && mobileInput && continueBtn) {
+        // Enable/disable continue button based on mobile input length
+        mobileInput.addEventListener('input', function() {
+            const mobile = mobileInput.value.trim();
+            const isValid = mobile.length >= 10 && /^\d+$/.test(mobile);
+            continueBtn.classList.toggle('disabled', !isValid);
+        });
+
+        mobileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const mobile = mobileInput.value.trim();
+
+            console.log('Mobile entered:', mobile);
+            console.log('Mobile length:', mobile.length);
+            console.log('Is valid mobile:', mobile.length >= 10 && /^\d+$/.test(mobile));
+
+            if (!mobile || mobile.length < 10) {
+                alert('Please enter a valid 10-digit mobile number');
+                return;
+            }
+
+            try {
+                // Show loading state
+                continueBtn.textContent = 'Sending OTP...';
+                continueBtn.disabled = true;
+
+                console.log('Sending OTP request to API');
+
+                // Send OTP via API
+                const result = await apiCall('/api/auth/send-otp', {
+                    method: 'POST',
+                    body: JSON.stringify({ mobile })
+                });
+
+                console.log('API response:', result);
+
+                if (result.success) {
+                    // Store mobile number for OTP page
+                    localStorage.setItem('pendingMobile', mobile);
+
+                    // Show success message with dev OTP if available
+                    if (result.devOtp) {
+                        console.log(`OTP sent successfully! (Dev mode: ${result.devOtp})`);
+                        // Store dev OTP for display on OTP page
+                        sessionStorage.setItem('devOtp', result.devOtp);
+                    } else {
+                        console.log('OTP sent successfully!');
+                    }
+
+                    // Redirect to OTP page
+                    console.log('Redirecting to OTP page...');
+                    window.location.href = 'otp.html';
+                } else {
+                    alert('Failed to send OTP: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                // Check if the error response contains a devOtp (for development fallback)
+                if (error.data && error.data.devOtp) {
+                    console.warn('SMS sending failed, but received dev OTP:', error.data.devOtp);
+                    localStorage.setItem('pendingMobile', mobile);
+                    sessionStorage.setItem('devOtp', error.data.devOtp);
+                    
+                    // Show a pop-up with the dev OTP and redirect
+                    alert('SMS sending failed. Using development OTP: ' + error.data.devOtp);
+                    window.location.href = 'otp.html';
+
+                } else if (error instanceof TypeError && error.message === 'Failed to fetch') {
+                    // Handle network errors where the server is unreachable
+                    console.warn('Could not connect to the server. Generating a client-side fallback OTP.');
+                    const fallbackOtp = String(Math.floor(100000 + Math.random() * 900000));
+                    
+                    localStorage.setItem('pendingMobile', mobile);
+                    sessionStorage.setItem('devOtp', fallbackOtp);
+
+                    alert('Server connection failed. Using client-side fallback OTP: ' + fallbackOtp);
+                    window.location.href = 'otp.html';
+
+                } else {
+                    // Handle generic errors
+                    console.error('OTP send failed:', error);
+                    console.error('Error details:', error.message);
+                    alert('Failed to send OTP. Please try again. Error: ' + error.message);
+                }
+
+            } finally {
+                // Reset button state
+                continueBtn.textContent = 'Continue';
+                continueBtn.disabled = false;
+            }
+        });
+    }
+
+    // OTP form handler
+    const otpForm = document.getElementById('otpForm');
+    if (otpForm) {
+        const mobile = localStorage.getItem('pendingMobile');
+        
+        otpForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const otpInput = document.getElementById('otp');
+            const otp = otpInput.value.trim();
+
+            if (!otp || otp.length !== 6) {
+                alert('Please enter a valid 6-digit OTP');
+                return;
+            }
+
+            try {
+                const result = await apiCall('/api/auth/verify-otp', {
+                    method: 'POST',
+                    body: JSON.stringify({ mobile, otp })
+                });
+
+                if (result.success) {
+                    // Store auth info if provided
+                    if (result.token) {
+                        localStorage.setItem('authToken', result.token);
+                    }
+                    
+                    // Redirect to profile setup
+                    window.location.href = 'profile.html';
+                } else {
+                    alert('OTP verification failed: ' + (result.error || 'Please try again'));
+                }
+            } catch (error) {
+                console.error('OTP verification error:', error);
+                alert('Failed to verify OTP: ' + error.message);
+            }
+        });
+    }
+        const devOtp = sessionStorage.getItem('devOtp');
+
+        // Display dev OTP if available
+        if (devOtp) {
+            const devOtpDiv = document.getElementById('devOtp');
+            const devOtpValue = document.getElementById('devOtpValue');
+            if (devOtpDiv && devOtpValue) {
+                devOtpValue.textContent = devOtp;
+                devOtpDiv.style.display = 'block';
+            }
+        }
+
+        if (!mobile) {
+            alert('Mobile number not found. Please start from the login page.');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        otpForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const otpInput = document.getElementById('otp');
+            const otp = otpInput.value.trim();
+
+            if (!otp || otp.length !== 6) {
+                alert('Please enter a valid 6-digit OTP');
+                return;
+            }
+
+            try {
+                // Show loading state
+                const submitBtn = otpForm.querySelector('button[type="submit"]');
+                submitBtn.textContent = 'Verifying...';
+                submitBtn.disabled = true;
+
+                // Verify OTP via API
+                const result = await apiCall('/api/auth/verify-otp', {
+                    method: 'POST',
+                    body: JSON.stringify({ mobile, otp })
+                });
+
+                if (result.success) {
+                    const authToken = result.token;
+                    sessionStorage.setItem('authToken', authToken);
+
+                    // Store user data
+                    sessionStorage.setItem('user', JSON.stringify(result.user));
+
+                    // Navigate to profile page
+                    window.location.href = 'profile.html';
+                } else {
+                    alert('Authentication failed: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('OTP verification failed', error);
+                alert('OTP verification failed. Please try again.');
+            } finally {
+                // Reset button state
+                const submitBtn = otpForm.querySelector('button[type="submit"]');
+                submitBtn.textContent = 'Submit';
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Resend OTP handler
+        const resendBtn = document.getElementById('resendOtp');
+        if (resendBtn) {
+            resendBtn.addEventListener('click', async () => {
+                const mobile = localStorage.getItem('pendingMobile');
+
+                try {
+                    // Show loading state
+                    resendBtn.textContent = 'Sending...';
+                    resendBtn.disabled = true;
+
+                    // Resend OTP via API
+                    const result = await apiCall('/api/auth/send-otp', {
+                        method: 'POST',
+                        body: JSON.stringify({ mobile })
+                    });
+
+                    if (result.success) {
+                        // Show success message with dev OTP if available
+                        if (result.devOtp) {
+                            alert(`OTP resent successfully! (Dev mode: ${result.devOtp})`);
+                        } else {
+                            alert('OTP resent successfully!');
+                        }
+                    } else {
+                        alert('Failed to resend OTP: ' + (result.error || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Failed to resend OTP:', error);
+                    alert('Failed to resend OTP. Please try again.');
+                } finally {
+                    // Reset button state
+                    resendBtn.textContent = 'Resend';
+                    resendBtn.disabled = false;
+                }
+            });
+        }
+    
+        // Profile form handler
+        const profileForm = document.getElementById('profileForm');
+        if (profileForm) {
+            profileForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const name = document.getElementById('name').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const userType = document.querySelector('input[name="userType"]:checked')?.value;
+
+                if (!name || !email || !userType) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+
+                try {
+                    // Store profile data
+                    const userData = {
+                        name,
+                        email,
+                        userType,
+                        mobile: localStorage.getItem('pendingMobile'),
+                        updatedAt: new Date().toISOString()
+                    };
+                    localStorage.setItem('userData', JSON.stringify(userData));
+
+                    // Redirect based on user type
+                    if (userType === 'seller') {
+                        window.location.href = 'location.html';
+                    } else {
+                        window.location.href = 'recycler.html';
+                    }
+                } catch (error) {
+                    console.error('Failed to save profile:', error);
+                    alert('Failed to save profile. Please try again.');
+                }
+            });
+        }
+
+        // Location form handler
+        const locForm = document.getElementById('locForm');
+        if (locForm) {
+            // Verify user is a seller
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            if (userData.userType !== 'seller') {
+                window.location.href = 'profile.html';
+                return;
+            }
+
+            locForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const pin = document.getElementById('pin').value.trim();
+                const state = document.getElementById('state').value.trim();
+                const city = document.getElementById('city').value.trim();
+                const landmark = document.getElementById('landmark').value.trim();
+                const houseNo = document.getElementById('hno').value.trim();
+
+                if (!pin || !state || !city || !houseNo) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+
+                try {
+                    // Store location data
+                    const locationData = {
+                        pin,
+                        state,
+                        city,
+                        landmark,
+                        houseNo,
+                        updatedAt: new Date().toISOString()
+                    };
+                    localStorage.setItem('locationData', JSON.stringify(locationData));
+
+                    // Redirect to home
+                    window.location.href = 'home.html';
+                } catch (error) {
+                    console.error('Failed to save location:', error);
+                    alert('Failed to save location. Please try again.');
+                }
+            });
+        }
+
+        // Recycler form handler
+        const recyclerForm = document.getElementById('recyclerForm');
+        if (recyclerForm) {
+            // Verify user is a recycler/buyer
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            if (userData.userType === 'seller') {
+                window.location.href = 'profile.html';
+                return;
+            }
+
+            recyclerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const businessName = document.getElementById('businessName')?.value.trim();
+                const businessType = document.getElementById('businessType')?.value;
+                const acceptedMaterials = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                    .map(cb => cb.value);
+                const address = document.getElementById('address')?.value.trim();
+                const pin = document.getElementById('pin')?.value.trim();
+                const state = document.getElementById('state')?.value.trim();
+                const city = document.getElementById('city')?.value.trim();
+
+                if (!businessName || !businessType || !address || !pin || !state || !city) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+
+                if (acceptedMaterials.length === 0) {
+                    alert('Please select at least one material type');
+                    return;
+                }
+
+                try {
+                    // Store recycler data
+                    const recyclerData = {
+                        businessName,
+                        businessType,
+                        acceptedMaterials,
+                        address,
+                        pin,
+                        state,
+                        city,
+                        updatedAt: new Date().toISOString()
+                    };
+                    localStorage.setItem('recyclerData', JSON.stringify(recyclerData));
+
+                    // Redirect to home
+                    window.location.href = 'home.html';
+                } catch (error) {
+                    console.error('Failed to save recycler info:', error);
+                    alert('Failed to save recycler information. Please try again.');
+                }
+            });
+        }
+    });

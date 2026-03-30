@@ -1,0 +1,170 @@
+/* styles.css - shared */
+:root{
+  --bg:#f6fbf5;
+  --card:#ffffff;
+  --green:#2fa84f;
+  --deep-green:#1f8a3d;
+  --muted:#8b8b8b;
+  --shadow: 0 10px 25px rgba(45,128,63,0.08);
+  --input-border:#e6e6e6;
+  --radius:36px;
+  --radius-sm:14px;
+  --max-width:420px;
+  --page-padding:20px;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+/* enable smooth scrolling for in-page navigation */
+html{scroll-behavior:smooth}
+
+/* sections for SPA-style dashboard */
+.section{display:none}
+.section.active{display:block}
+.section{transition:opacity 180ms ease}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  display:flex;
+  justify-content:center;
+  padding:20px 0;
+  color:#111;
+}
+.container{
+  width:100%;
+  max-width:var(--max-width);
+  background:linear-gradient(transparent, transparent);
+  min-height:100vh;
+  padding:var(--page-padding);
+}
+
+/* Top/logo */
+.logo{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  color:var(--deep-green);
+  font-weight:700;
+  font-size:22px;
+  margin:6px 0 20px 0;
+}
+.leaf{
+  width:44px;height:44px;border-radius:12px;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(47,168,79,0.06);
+  color:var(--deep-green);font-size:22px;
+}
+
+/* hero title */
+.title{
+  font-size:44px;
+  margin:12px 0 10px 0;
+  line-height:1;
+  font-weight:800;
+}
+.subtitle{
+  color:var(--muted);
+  margin-bottom:28px;
+  font-size:16px;
+}
+
+/* big round button */
+.action-btn{
+  display:block;
+  width:100%;
+  background:var(--green);
+  color:#fff;
+  text-align:center;
+  padding:18px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:20px;
+  box-shadow: var(--shadow);
+  border:none;
+  text-decoration:none;
+}
+.action-btn.disabled{
+  opacity:0.6;
+  pointer-events:none;
+}
+
+/* Card style inputs */
+.input-card{
+  background:var(--card);
+  border-radius:18px;
+  padding:18px;
+  border:1px solid var(--input-border);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.03);
+}
+.field-label{font-weight:700;margin-bottom:8px;}
+.input{
+  width:100%;
+  padding:16px 14px;
+  border-radius:14px;
+  border:1px solid var(--input-border);
+  font-size:16px;
+  outline:none;
+  box-shadow:none;
+}
+.helper{color:var(--muted);font-size:14px;margin-top:8px}
+
+/* radio list for language */
+.lang-list{display:flex;flex-direction:column;gap:12px}
+.lang-item{
+  background:var(--card);
+  border-radius:14px;
+  padding:14px;
+  border:2px solid transparent;
+  display:flex;align-items:center;gap:12px;
+}
+.lang-item.selected{
+  border-color:rgba(47,168,79,0.12);
+  background:linear-gradient(0deg, rgba(47,168,79,0.03), rgba(47,168,79,0.03));
+}
+.lang-dot{
+  width:22px;height:22px;border-radius:50%;border:2px solid #cfcfcf;display:inline-block;
+}
+.lang-dot.on{background:var(--green);border-color:var(--green)}
+
+/* small stat cards on home */
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:18px}
+.stat{
+  background:var(--card);border-radius:18px;padding:18px;text-align:center;box-shadow:0 6px 12px rgba(0,0,0,0.02)
+}
+.stat .num{font-weight:800;font-size:22px;margin-top:10px}
+.stat .label{color:var(--muted);font-size:14px;margin-top:6px}
+
+/* bottom navigation */
+.bottom-nav{
+  position:fixed;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:8px;
+  width:calc(100% - 40px);
+  max-width:var(--max-width);
+  display:flex;
+  gap:18px;
+  justify-content:space-around;
+  align-items:center;
+  background:transparent;
+}
+.nav-item{display:flex;flex-direction:column;align-items:center;font-size:12px;color:#888}
+.nav-item.active{color:var(--green);font-weight:700}
+
+/* cards in lists (sell, events) */
+.list-card{
+  background:var(--card);border-radius:18px;padding:16px;margin-bottom:18px;border:1px solid var(--input-border);
+}
+.item-title{font-weight:800;font-size:18px;margin-bottom:8px}
+.meta{color:var(--muted);font-size:14px;margin-bottom:10px}
+
+/* responsive tweaks */
+@media (max-width:420px){
+  .title{font-size:40px}
+  .container{padding:18px}
+}
+
+/* little visual spacing to imitate the screenshots */
+.spacer{height:24px}

@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Select Language</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="translations.js"></script>
+  <style>
+    .lang-grid {
+      position: relative;
+      margin: 40px 0;
+      padding: 20px;
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .lang-grid {
+      max-width: 400px;
+      margin: 20px auto;
+    }
+
+    .lang-grid-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .lang-quadrant {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+      text-align: center;
+      min-height: 100px;
+    }
+
+    .lang-item {
+      background: var(--light-green);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 10px;
+      width: 100%;
+      transition: transform 0.2s, background-color 0.2s;
+      cursor: pointer;
+    }
+
+    .lang-item:hover {
+      transform: scale(1.02);
+    }
+
+    .lang-item.selected {
+      background: var(--green);
+      color: white;
+    }
+
+    .lang-name {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .lang-native {
+      font-size: 14px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo"><div class="leaf">🍃</div><span data-translate="app_name">Ecovera</span></div>
+    <div class="title" data-translate="language_title">Select Your Language</div>
+    <div class="subtitle" data-translate="language_subtitle">Choose your preferred language from the axis below</div>
+
+    <div class="lang-grid">
+      <!-- Axes -->
+      <div class="axis x-axis"></div>
+      <div class="axis y-axis"></div>
+      <!-- Language Grid -->
+      <div class="lang-grid-container" style="grid-template-columns: 1fr; gap: 15px; max-width: 400px; margin: 0 auto;">
+        <!-- English -->
+        <div class="lang-item selected" id="english" data-lang="en">
+          <div class="lang-name" data-translate="english">English</div>
+          <div class="lang-native" data-translate="english_native">Default Language</div>
+        </div>
+
+        <!-- Kannada -->
+        <div class="lang-item" id="kannada" data-lang="kn">
+          <div class="lang-name" data-translate="kannada">ಕನ್ನಡ</div>
+          <div class="lang-native" data-translate="kannada_native">Kannada</div>
+        </div>
+
+        <!-- Hindi -->
+        <div class="lang-item" id="hindi" data-lang="hi">
+          <div class="lang-name" data-translate="hindi">हिन्दी</div>
+          <div class="lang-native" data-translate="hindi_native">Hindi</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:40px"></div>
+    <button class="action-btn" id="continue-btn" data-translate="continue">Continue</button>
+  </div>
+
+  <script>
+    // Handle language selection
+    document.querySelectorAll('.lang-item').forEach(item => {
+      item.addEventListener('click', () => {
+        // Remove selected class from all items
+        document.querySelectorAll('.lang-item').forEach(i => i.classList.remove('selected'));
+        // Add selected class to clicked item
+        item.classList.add('selected');
+
+        // Get the selected language code
+        const selectedLang = item.getAttribute('data-lang');
+        if (selectedLang) {
+          localStorage.setItem('selectedLanguage', selectedLang);
+          // Apply translations for the selected language
+          applyTranslations(selectedLang);
+        }
+      });
+    });
+
+    // Initialize with stored language or default to English
+    const storedLang = localStorage.getItem('selectedLanguage') || 'en';
+    document.querySelectorAll('.lang-item').forEach(item => {
+      if (item.getAttribute('data-lang') === storedLang) {
+        item.classList.add('selected');
+      } else {
+        item.classList.remove('selected');
+      }
+    });
+    applyTranslations(storedLang);
+
+    // Handle continue button click
+    document.getElementById('continue-btn').addEventListener('click', () => {
+      // Redirect to role selection page
+      window.location.href = 'role.html';
+    });
+  </script>
+</body>
+</html>

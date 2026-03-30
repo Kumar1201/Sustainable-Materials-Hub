@@ -1,0 +1,267 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet" href="leaflet.css">
+    <title>Order Details - Ecovera</title>
+    <style>
+        :root {
+            --deep-green: #2fa84f;
+            --green: #34A853;
+            --light-green: #e6f7ea;
+            --text-color: #333;
+            --meta-color: #777;
+            --border-color: #eee;
+            --bg-color: #f8f8f8;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding-bottom: 70px;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        /* --- Header Bar Styles --- */
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            color: var(--deep-green);
+        }
+
+        .logo .leaf {
+            font-size: 24px;
+            margin-right: 4px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            padding: 6px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        /* --- Order Details Layout --- */
+        .order-details-container {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 120px);
+        }
+
+        .seller-details {
+            flex: 1;
+            background: #fff;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            overflow-y: auto;
+        }
+
+        .map-container {
+            flex: 1;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            padding: 20px;
+        }
+
+        #orderMap {
+            height: 100%;
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .seller-info-card {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .seller-info-card h3 {
+            margin: 0 0 12px 0;
+            color: var(--deep-green);
+            font-size: 18px;
+        }
+
+        .info-row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            width: 100px;
+            color: var(--meta-color);
+        }
+
+        .info-value {
+            flex: 1;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--meta-color);
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-bar">
+            <button class="back-btn" onclick="goBack()">←</button>
+            <div class="logo"><div class="leaf">🍃</div>Ecovera</div>
+        </div>
+
+        <div class="order-details-container">
+            <div class="seller-details" id="sellerDetails">
+                <div class="loading">Loading order details...</div>
+            </div>
+            <div class="map-container">
+                <div id="orderMap"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet Map JS -->
+    <script src="leaflet.js"></script>
+    <script>
+        let map = null;
+
+        function goBack() {
+            window.history.back();
+        }
+
+        function getOrderIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('orderId');
+        }
+
+        async function loadOrderDetails() {
+            const orderId = getOrderIdFromUrl();
+            if (!orderId) {
+                document.getElementById('sellerDetails').innerHTML = '<div class="error">Order ID not found</div>';
+                return;
+            }
+
+            try {
+                // First get all orders, then find the specific one
+                const response = await fetch('/api/orders/all');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch orders');
+                }
+                const result = await response.json();
+                if (!result.success || !result.orders) {
+                    throw new Error('No orders found');
+                }
+
+                const order = result.orders.find(o => o.id == orderId);
+                if (!order) {
+                    throw new Error('Order not found');
+                }
+
+                displayOrderDetails(order);
+                initializeMap(order);
+            } catch (error) {
+                console.error('Error loading order details:', error);
+                document.getElementById('sellerDetails').innerHTML = '<div class="error">Failed to load order details</div>';
+            }
+        }
+
+        function displayOrderDetails(order) {
+            const sellerDetailsContainer = document.getElementById('sellerDetails');
+            sellerDetailsContainer.innerHTML = `
+                <div class="seller-info-card">
+                    <h3>Seller Information</h3>
+                    <div class="info-row">
+                        <div class="info-label">Waste Type:</div>
+                        <div class="info-value">${order.waste_type}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Quantity:</div>
+                        <div class="info-value">${order.quantity} kg</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Address:</div>
+                        <div class="info-value">${order.address || 'Not specified'}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Status:</div>
+                        <div class="info-value">${order.status}</div>
+                    </div>
+                    ${order.estimatedPrice ? `
+                    <div class="info-row">
+                        <div class="info-label">Est. Price:</div>
+                        <div class="info-value">₹${order.estimatedPrice}</div>
+                    </div>
+                    ` : ''}
+                    ${order.treesSaved ? `
+                    <div class="info-row">
+                        <div class="info-label">Trees Saved:</div>
+                        <div class="info-value">${order.treesSaved.toFixed(2)}</div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function initializeMap(order) {
+            if (map) {
+                map.remove();
+            }
+
+            if (order.latitude && order.longitude) {
+                map = L.map('orderMap').setView([order.latitude, order.longitude], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+
+                L.marker([order.latitude, order.longitude]).addTo(map)
+                    .bindPopup(`<b>Pickup for ${order.waste_type}</b><br>${order.address}`).openPopup();
+
+                // Ensure map renders properly
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 100);
+            } else {
+                document.getElementById('orderMap').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#777;font-size:16px;">Location data not available</div>';
+            }
+        }
+
+        // Load order details when page loads
+        document.addEventListener('DOMContentLoaded', loadOrderDetails);
+    </script>
+</body>
+</html>

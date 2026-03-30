@@ -1,0 +1,587 @@
+// user.js - Frontend API integration for Ecovera app
+document.addEventListener("DOMContentLoaded", () => {
+
+    // API Base URL
+    const API_BASE = window.location.origin;
+
+    // Auth token storage
+    let authToken = sessionStorage.getItem('authToken');
+
+    // Helper function to make API calls
+    async function apiCall(endpoint, options = {}) {
+        const url = `${API_BASE}${endpoint}`;
+        const config = {
+            cache: 'no-cache',
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            },
+            ...options
+        };
+
+        if (authToken && !config.headers.Authorization) {
+            config.headers.Authorization = `Bearer ${authToken}`;
+        }
+
+        try {
+            const response = await fetch(url, config);
+
+            // read raw text first to handle empty or non-json responses
+            const text = await response.text();
+
+            // if empty body
+            if (!text) {
+                if (!response.ok) throw new Error(`HTTP ${response.status} (empty response)`);
+                return {};
+            }
+
+            // try parse JSON
+            let data;
+            const contentType = response.headers.get('content-type') || '';
+            if (contentType.includes('application/json') || text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                try {
+                    data = JSON.parse(text);
+                } catch (parseErr) {
+                    console.error('Failed to parse JSON response from', url, 'text:', text);
+                    throw new Error('Invalid JSON response from server');
+                }
+            } else {
+                // non-JSON response
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${text}`);
+                return text;
+            }
+
+            if (!response.ok) {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+
+            return data;
+        } catch (error) {
+            console.error('API call failed:', error);
+            throw error;
+        }
+    }
+
+    // Local (frontend-only) helpers to simulate backend behavior
+    function generateLocalOtp() {
+        return String(Math.floor(100000 + Math.random() * 900000));
+    }
+
+    function sendLocalOtp(mobile) {
+        const otp = generateLocalOtp();
+        const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+        sessionStorage.setItem('pendingMobile', mobile);
+        sessionStorage.setItem('otp', otp);
+        sessionStorage.setItem('otp_expires_at', String(expiresAt));
+        // For dev convenience, also return it
+        return { ok: true, otp };
+    }
+
+    function verifyLocalOtp(mobile, otp) {
+        const storedMobile = sessionStorage.getItem('pendingMobile');
+        const storedOtp = sessionStorage.getItem('otp');
+        const expires = parseInt(sessionStorage.getItem('otp_expires_at') || '0', 10);
+        if (!storedMobile || storedMobile.replace(/\D/g, '') !== mobile.replace(/\D/g, '')) {
+            return { ok: false, error: 'No OTP request found for this mobile' };
+        }
+        if (Date.now() > expires) {
+            sessionStorage.removeItem('otp');
+            sessionStorage.removeItem('otp_expires_at');
+            return { ok: false, error: 'OTP expired' };
+        }
+        if (storedOtp !== String(otp)) return { ok: false, error: 'Invalid OTP' };
+
+        // Create a simple local user record
+        const user = { id: Date.now() % 1000000, mobile: storedMobile };
+        const token = String(user.id);
+        sessionStorage.setItem('authToken', token);
+        sessionStorage.setItem('user', JSON.stringify(user));
+
+        // Clean up OTP
+        sessionStorage.removeItem('otp');
+        sessionStorage.removeItem('otp_expires_at');
+        sessionStorage.removeItem('pendingMobile');
+
+        return { ok: true, token, user };
+    }
+
+    // Login form handler (local fallback)
+    const mobileForm = document.getElementById('mobileForm');
+    const mobileInput = document.getElementById('mobile');
+    const continueBtn = document.getElementById('continueBtn');
+
+    if (mobileForm && mobileInput && continueBtn) {
+        // Enable/disable continue button based on mobile input length
+        mobileInput.addEventListener('input', () => {
+            const mobile = mobileInput.value.replace(/\D/g, '');
+            if (mobile.length >= 10 && mobile.length <= 12) {
+                continueBtn.classList.remove('disabled');
+            } else {
+                continueBtn.classList.add('disabled');
+            }
+        });
+
+        mobileForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const mobile = mobileInput.value.replace(/\D/g, '');
+
+            if (mobile.length < 10 || mobile.length > 12) {
+                alert('Please enter a valid 10-12 digit mobile number');
+                return;
+            }
+
+            // If more than 10 digits, take the last 10 (assuming country code prefix)
+            const processedMobile = mobile.length > 10 ? mobile.slice(-10) : mobile;
+
+            try {
+                const resp = sendLocalOtp(mobile);
+                if (resp.ok) {
+                    // show OTP on dev area and navigate
+                    sessionStorage.setItem('otp', resp.otp);
+                    window.location.href = 'otp.html';
+                } else {
+                    alert('Failed to generate OTP');
+                }
+            } catch (error) {
+                console.error('Local OTP generation failed', error);
+                alert('Failed to send OTP: ' + (error && error.message));
+            }
+        });
+    }
+
+    // OTP form handler
+    const otpForm = document.getElementById('otpForm');
+    if (otpForm) {
+        // If a dev OTP was stored (from previous step), show it in the dev OTP area
+        const devOtpDiv = document.getElementById('devOtp');
+        const devOtpValue = document.getElementById('devOtpValue');
+        const storedOtp = sessionStorage.getItem('otp');
+        if (devOtpDiv && devOtpValue && storedOtp) {
+            devOtpValue.textContent = storedOtp;
+            devOtpDiv.style.display = 'block';
+        }
+
+        otpForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const otpInput = document.getElementById('otp');
+            const otp = otpInput.value;
+            const mobile = sessionStorage.getItem('pendingMobile');
+
+            if (!otp || !mobile) {
+                alert('Missing OTP or mobile number');
+                return;
+            }
+
+            try {
+                const response = verifyLocalOtp(mobile, otp);
+                if (!response.ok) {
+                    alert('OTP verification failed: ' + (response.error || 'Unknown'));
+                    return;
+                }
+
+                // Store auth token and user data (already done in verifyLocalOtp)
+                authToken = response.token;
+                sessionStorage.setItem('authToken', authToken);
+                sessionStorage.setItem('user', JSON.stringify(response.user));
+
+                // Navigate to profile page
+                window.location.href = 'profile.html';
+            } catch (error) {
+                alert('OTP verification failed: ' + (error && error.message));
+            }
+        });
+
+        // Resend OTP handler (local)
+        const resendBtn = document.getElementById('resendOtp');
+        if (resendBtn) {
+            resendBtn.addEventListener('click', () => {
+                const mobile = sessionStorage.getItem('pendingMobile');
+                if (!mobile) {
+                    alert('No mobile number found');
+                    return;
+                }
+
+                try {
+                    const resp = sendLocalOtp(mobile);
+                    if (resp.otp && devOtpDiv && devOtpValue) {
+                        sessionStorage.setItem('otp', resp.otp);
+                        devOtpValue.textContent = resp.otp;
+                        devOtpDiv.style.display = 'block';
+                    }
+                    alert('OTP resent successfully');
+                } catch (error) {
+                    alert('Failed to resend OTP: ' + (error && error.message));
+                }
+            });
+        }
+    }
+
+    // Profile form handler (local fallback)
+    const profileForm = document.getElementById('profileForm');
+    if (profileForm) {
+        profileForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            if (!name || !email) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            try {
+                // Update stored user data locally
+                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                user.name = name;
+                user.email = email;
+                sessionStorage.setItem('user', JSON.stringify(user));
+
+                // Navigate to location page
+                window.location.href = 'location.html';
+            } catch (error) {
+                alert('Failed to update profile: ' + error.message);
+            }
+        });
+    }
+
+    // Location form handler (local fallback)
+    const locForm = document.getElementById('locForm');
+    if (locForm) {
+        // Load existing user location data
+        loadUserLocationData();
+
+        locForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pin = document.getElementById('pin').value.trim();
+            const state = document.getElementById('state').value.trim();
+            const city = document.getElementById('city').value.trim();
+            const landmark = document.getElementById('landmark').value.trim();
+            const hno = document.getElementById('hno').value.trim();
+
+            if (!pin) {
+                alert('Please enter pin code');
+                return;
+            }
+
+            try {
+                // Update stored user data locally
+                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                user.pin = pin;
+                user.state = state;
+                user.city = city;
+                user.landmark = landmark;
+                user.hno = hno;
+                sessionStorage.setItem('user', JSON.stringify(user));
+
+                // Navigate to dashboard
+                window.location.href = 'home.html';
+            } catch (error) {
+                alert('Failed to update location: ' + error.message);
+            }
+        });
+    }
+
+    // Load user location data for pre-filling form
+    function loadUserLocationData() {
+        try {
+            const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+            if (user.pin) document.getElementById('pin').value = user.pin;
+            if (user.state) document.getElementById('state').value = user.state;
+            if (user.city) document.getElementById('city').value = user.city;
+            if (user.landmark) document.getElementById('landmark').value = user.landmark;
+            if (user.hno) document.getElementById('hno').value = user.hno;
+        } catch (error) {
+            console.error('Failed to load user location data:', error);
+        }
+    }
+
+    // Load user data on dashboard
+    function loadUserData() {
+        const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+        const userNameEl = document.getElementById('userName');
+        const menuNameEl = document.getElementById('menu-user-name');
+        const menuEmailEl = document.getElementById('menu-user-email');
+
+        if (user.name && userNameEl) userNameEl.textContent = user.name;
+        if (user.name && menuNameEl) menuNameEl.textContent = user.name;
+        if (user.email && menuEmailEl) menuEmailEl.textContent = user.email;
+    }
+
+    // Load dashboard data (local fallback)
+    function loadDashboardData() {
+        try {
+            // Load user orders from local storage
+            const orders = JSON.parse(sessionStorage.getItem('orders') || '[]');
+
+            // Update dashboard stats
+            updateDashboardStats(orders);
+
+            console.log('Dashboard data loaded:', { orders });
+        } catch (error) {
+            console.error('Failed to load dashboard data:', error);
+        }
+    }
+
+    // Update dashboard statistics
+    function updateDashboardStats(orders) {
+        const stats = orders.reduce((acc, order) => {
+            acc.totalEarnings += order.estimatedPrice || 0;
+            acc.totalWaste += order.totalQuantity || 0;
+            acc.treesSaved += order.treesSaved || 0;
+            return acc;
+        }, { totalEarnings: 0, totalWaste: 0, treesSaved: 0, totalOrders: orders.length });
+
+        // Update UI elements
+        const earningsEl = document.querySelector('[data-detail="earnings"] .num');
+        const wasteEl = document.querySelector('[data-detail="waste-list"] .num');
+        const pickupsEl = document.querySelector('[data-detail="pickups-status"] .num');
+        const treesEl = document.querySelector('[data-detail="trees-saved"] .num');
+
+        if (earningsEl) earningsEl.textContent = `₹${stats.totalEarnings.toFixed(2)}`;
+        if (wasteEl) wasteEl.textContent = `${stats.totalWaste.toFixed(1)} kg`;
+        if (pickupsEl) pickupsEl.textContent = stats.totalOrders;
+        if (treesEl) treesEl.textContent = stats.treesSaved.toFixed(1);
+    }
+
+    // Initialize dashboard
+    if (window.location.pathname.includes('home.html')) {
+        loadUserData();
+        loadDashboardData();
+    }
+
+    // Logout handler
+    const logoutBtn = document.querySelector('.menu-item.logout');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        });
+    }
+
+    // Check authentication on protected pages
+    if (!authToken && !window.location.pathname.includes('login.html') && !window.location.pathname.includes('otp.html')) {
+        window.location.href = 'login.html';
+    }
+
+    // Dashboard functionality (SPA navigation)
+    if (window.location.pathname.includes('home.html')) {
+        // Section switching
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+
+            // Update bottom nav active state
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                nav.classList.remove('active');
+            });
+            const activeNav = document.querySelector(`[data-target="${sectionId}"]`);
+            if (activeNav) activeNav.classList.add('active');
+        }
+
+        // Profile menu toggle
+        const profileBtn = document.getElementById('profile-btn');
+        const profileMenu = document.getElementById('profile-menu');
+        if (profileBtn && profileMenu) {
+            profileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                profileMenu.classList.toggle('active');
+            });
+
+            // Close menu when clicking outside
+            document.addEventListener('click', () => {
+                profileMenu.classList.remove('active');
+            });
+        }
+
+        // Profile menu items
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const flow = e.target.getAttribute('data-flow');
+                if (flow) {
+                    if (flow === 'language-change') {
+                        window.location.href = 'language.html';
+                    } else if (flow === 'edit-profile') {
+                        showSection('edit-profile');
+                    } else if (flow === 'saved-address') {
+                        showSection('saved-address');
+                    }
+                }
+                profileMenu.classList.remove('active');
+            });
+        });
+
+        // Bottom navigation
+        document.querySelectorAll('.nav-item').forEach(nav => {
+            nav.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = nav.getAttribute('data-target');
+                if (target) {
+                    showSection(target);
+                }
+            });
+        });
+
+        // Sell scrap category selection
+        document.querySelectorAll('.category-item').forEach(category => {
+            category.addEventListener('click', (e) => {
+                e.preventDefault();
+                const flow = category.getAttribute('data-flow');
+                if (flow && flow.startsWith('sell-details-')) {
+                    const categoryType = flow.replace('sell-details-', '');
+                    showSection('sell-details');
+
+                    // Show relevant waste types
+                    document.querySelectorAll('.waste-type').forEach(type => {
+                        type.classList.remove('active');
+                    });
+                    const targetType = document.querySelector(`.waste-type[data-category="${categoryType}"]`);
+                    if (targetType) {
+                        targetType.classList.add('active');
+                    }
+
+                    // Update title
+                    const titleEl = document.getElementById('detail-title');
+                    if (titleEl) {
+                        titleEl.textContent = categoryType.charAt(0).toUpperCase() + categoryType.slice(1) + ' Details';
+                    }
+                }
+            });
+        });
+
+        // Waste type selection and quantity handling
+        document.querySelectorAll('.list-card[data-flow="upload-waste-1"]').forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+                const wasteType = card.getAttribute('data-waste-type');
+                const price = card.getAttribute('data-price');
+                const trees = card.getAttribute('data-trees');
+
+                // Store selected waste info
+                sessionStorage.setItem('selectedWaste', JSON.stringify({ wasteType, price, trees }));
+
+                // Navigate to upload step 1
+                showSection('upload-waste-1');
+
+                // Pre-fill waste type
+                const wasteTypeInput = document.getElementById('upload-waste-type');
+                if (wasteTypeInput) {
+                    wasteTypeInput.value = wasteType;
+                }
+            });
+        });
+
+        // Quantity input handling for estimated price
+        document.querySelectorAll('.waste-quantity').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const quantity = parseFloat(e.target.value) || 0;
+                const card = e.target.closest('.list-card');
+                const price = parseFloat(card.getAttribute('data-price')) || 0;
+                const estimatedPrice = quantity * price;
+
+                const priceEl = card.querySelector('.estimated-price');
+                if (priceEl) {
+                    priceEl.textContent = estimatedPrice > 0 ? `₹${estimatedPrice.toFixed(2)}` : '';
+                }
+            });
+        });
+
+        // Form flow handlers
+        document.querySelectorAll('[data-flow]').forEach(element => {
+            element.addEventListener('click', (e) => {
+                e.preventDefault();
+                const flow = element.getAttribute('data-flow');
+
+                switch (flow) {
+                    case 'sell':
+                        showSection('sell');
+                        break;
+                    case 'upload-waste-2':
+                        showSection('upload-waste-2');
+                        break;
+                    case 'submit-waste':
+                        // Create order locally
+                        const selectedWaste = JSON.parse(sessionStorage.getItem('selectedWaste') || '{}');
+                        const quantity = parseFloat(document.querySelector('#upload-waste-1 input[type="number"]').value) || 0;
+                        const order = {
+                            id: Date.now(),
+                            wasteType: selectedWaste.wasteType,
+                            quantity: quantity,
+                            estimatedPrice: quantity * parseFloat(selectedWaste.price),
+                            treesSaved: quantity * parseFloat(selectedWaste.trees),
+                            status: 'pending',
+                            createdAt: new Date().toISOString()
+                        };
+
+                        // Save to local orders
+                        const orders = JSON.parse(sessionStorage.getItem('orders') || '[]');
+                        orders.push(order);
+                        sessionStorage.setItem('orders', JSON.stringify(orders));
+
+                        alert('Pickup request submitted successfully!');
+                        showSection('overview');
+                        loadDashboardData(); // Refresh stats
+                        break;
+                    case 'save-profile':
+                        // Save profile changes locally
+                        const name = document.getElementById('edit-name').value.trim();
+                        const email = document.getElementById('edit-email').value.trim();
+                        if (name && email) {
+                            const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                            user.name = name;
+                            user.email = email;
+                            sessionStorage.setItem('user', JSON.stringify(user));
+                            loadUserData(); // Refresh display
+                            alert('Profile updated successfully!');
+                            showSection('overview');
+                        } else {
+                            alert('Please fill in all fields');
+                        }
+                        break;
+                    case 'save-address-submit':
+                        alert('Address saved successfully!');
+                        showSection('saved-address');
+                        break;
+                    case 'overview':
+                        showSection('overview');
+                        break;
+                    case 'add-new-address':
+                        showSection('add-new-address');
+                        break;
+                }
+            });
+        });
+
+        // Language button
+        const languageBtn = document.getElementById('language-btn');
+        if (languageBtn) {
+            languageBtn.addEventListener('click', () => {
+                window.location.href = 'language.html';
+            });
+        }
+
+        // Initialize greeting based on time
+        function updateGreeting() {
+            const hour = new Date().getHours();
+            let greeting = 'Good Morning';
+            let emoji = '🌅';
+
+            if (hour >= 12 && hour < 17) {
+                greeting = 'Good Afternoon';
+                emoji = '☀️';
+            } else if (hour >= 17) {
+                greeting = 'Good Evening';
+                emoji = '🌙';
+            }
+
+            const greetingEl = document.getElementById('timeGreeting');
+            const emojiEl = document.getElementById('greetingEmoji');
+            if (greetingEl) greetingEl.textContent = greeting;
+            if (emojiEl) emojiEl.textContent = emoji;
+        }
+
+        updateGreeting();
+    }
+});

@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Recycler Setup - Ecovera</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="translations.js"></script>
+  <script defer src="user.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="logo"><div class="leaf">🍃</div>Ecovera</div>
+
+      <div class="title" data-translate="recycler_setup">Recycler Setup</div>
+
+      <form id="recyclerForm" class="input-card" style="margin-top:18px;">
+          <div class="field-label" data-translate="business_name">Business Name</div>
+          <input id="businessName" class="input" type="text" data-translate="enter_business_name" placeholder="Enter your business name" required />
+          <div style="height:14px"></div>
+
+          <div class="field-label" data-translate="business_type">Business Type</div>
+          <select id="businessType" class="input" required>
+              <option value="" data-translate="select_business_type">Select business type</option>
+              <option value="recycling_plant" data-translate="recycling_plant">Recycling Plant</option>
+              <option value="collection_center" data-translate="collection_center">Collection Center</option>
+              <option value="scrap_dealer" data-translate="scrap_dealer">Scrap Dealer</option>
+              <option value="other"data-translate="other">Other</option>
+          </select>
+          <div style="height:14px"></div>
+
+          <div class="field-label" data-translate="pincode">PIN Code</div>
+          <input id="pin" class="input" type="text" pattern="[0-9]*" maxlength="6" inputmode="numeric" data-translate="enter_pin" placeholder="Enter 6-digit PIN code" required />
+          <div style="height:14px"></div>
+
+          <div class="field-label" data-translate="city">City</div>
+          <input id="city" class="input" type="text" data-translate="enter_city" placeholder="Enter your city" required />
+          <div style="height:14px"></div>
+
+          <div class="field-label" data-translate="state">State</div>
+          <input id="state" class="input" type="text" data-translate="enter_state" placeholder="Enter your state" required />
+          <div style="height:14px"></div>
+
+          <div class="field-label" data-translate="mobile">Mobile Number</div>
+          <input id="mobile" class="input" type="text" pattern="[0-9]*" maxlength="10" inputmode="numeric" data-translate="enter_mobile" placeholder="Enter your mobile number" required />
+
+          <div style="height:22px"></div>
+          <button type="submit" class="action-btn" data-translate="continue_to_home">Continue to Home</button>
+      </form>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Check role
+        const token = sessionStorage.getItem('authToken');
+        const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+
+        if (!user.role || user.role !== 'buyer') {
+          window.location.href = 'role.html';
+          return;
+        }
+
+        // Prefill mobile number from user session
+        const mobileInput = document.getElementById('mobile');
+        if (mobileInput && user.mobile) {
+          mobileInput.value = user.mobile;
+        }
+
+        // Handle form submission
+        const recyclerForm = document.getElementById('recyclerForm');
+        recyclerForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+
+          const submitButton = recyclerForm.querySelector('button[type="submit"]');
+          submitButton.disabled = true;
+          submitButton.textContent = 'Saving...';
+          const businessName = document.getElementById('businessName').value;
+          const businessType = document.getElementById('businessType').value;
+          const pin = document.getElementById('pin').value;
+          const city = document.getElementById('city').value;
+          const state = document.getElementById('state').value;
+          const mobile = document.getElementById('mobile').value;
+
+          try {
+            const response = await fetch('/api/recycler/setup', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // Assuming you use Bearer tokens
+              },
+              body: JSON.stringify({
+                mobile: mobile,
+                business_name: businessName,
+                business_type: businessType,
+                pincode: pin,
+                city: city,
+                state: state
+              })
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred.' }));
+              throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+              // Update user data in session
+              user.recycler_setup = true;
+              user.business_name = businessName;
+              user.business_type = businessType;
+              user.pincode = pin;
+              user.city = city;
+              user.state = state;
+              sessionStorage.setItem('user', JSON.stringify(user));
+
+              // Redirect to order page
+              window.location.href = 'order.html';
+            } else {
+              // Use server's message if available
+              alert(`Failed to save recycler setup: ${result.message || 'Please try again.'}`);
+            }
+          } catch (error) {
+            console.error('Error saving recycler setup:', error);
+            alert(`Error saving recycler setup: ${error.message}`);
+          } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Continue to Home';
+          }
+        });
+      });
+    </script>
+  </div>
+</body>
+</html>

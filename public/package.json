@@ -1,0 +1,19 @@
+{
+  "name": "ecovera-app",
+  "version": "1.0.0",
+  "description": "A mobile-responsive web application for waste collection and recycling, built with modern web technologies.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "firebase-admin": "^11.11.0",
+    "node-fetch": "^3.3.0",
+    "sqlite3": "^5.1.4"
+  },
+  "author": "",
+  "license": "MIT"
+}

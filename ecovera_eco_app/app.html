@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ecovera — App</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .app-screen {
+      width: 100%;
+      max-width: 480px;
+      padding: 20px;
+    }
+    
+    .app-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+    
+    .app-logo {
+      width: 40px;
+      height: 40px;
+      color: var(--primary);
+      margin-right: 12px;
+    }
+    
+    .dashboard {
+      background: var(--secondary);
+      padding: 24px;
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+    }
+    
+    .stat {
+      text-align: center;
+      padding: 16px;
+      background: white;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    
+    .action-list {
+      display: grid;
+      gap: 16px;
+    }
+    
+    .action-item {
+      background: white;
+      padding: 16px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .action-icon {
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <div class="app-screen">
+      <header class="app-header">
+        <svg class="app-logo" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="20" r="19" stroke="currentColor" stroke-width="2"/>
+          <path d="M14 20L18 24L26 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1>Ecovera</h1>
+      </header>
+
+      <section class="dashboard">
+        <div class="stat">
+          <div class="stat-value">127</div>
+          <div class="stat-label">Eco Actions</div>
+        </div>
+      </section>
+
+      <section class="action-list">
+        <div class="action-item">
+          <span class="action-icon">🌱</span>
+          <div>
+            <h3>Plant a Tree</h3>
+            <p>Join our next planting event</p>
+          </div>
+        </div>
+        <div class="action-item">
+          <span class="action-icon">♻️</span>
+          <div>
+            <h3>Recycle</h3>
+            <p>Find recycling points near you</p>
+          </div>
+        </div>
+        <div class="action-item">
+          <span class="action-icon">💧</span>
+          <div>
+            <h3>Save Water</h3>
+            <p>Track your water usage</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

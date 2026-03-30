@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Choose Your Role</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="translations.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="logo"><div class="leaf">🍃</div>Ecovera</div>
+
+    <div class="title" data-translate="choose_role_title">Choose Your Role</div>
+    <div class="subtitle" data-translate="choose_role_subtitle">Select how you want to use Ecovera</div>
+
+    <div class="role-options" style="display:flex;gap:20px;margin-top:40px;">
+      <div class="role-card" id="seller-option" style="flex:1;padding:40px;border:2px solid #e8f5e8;border-radius:16px;text-align:center;cursor:pointer;transition:all 0.3s ease;background:#f8fdf8;">
+        <div class="role-icon" style="font-size:64px;margin-bottom:20px;">
+          <img src="https://img.icons8.com/color/96/000000/shop.png" alt="Seller" style="width:96px;height:96px;">
+        </div>
+        <div class="role-title" style="font-size:24px;font-weight:600;margin-bottom:12px;color:#2d5a2d;" data-translate="seller_role">Seller</div>
+      </div>
+
+      <div class="role-card" id="buyer-option" style="flex:1;padding:40px;border:2px solid #e8f5e8;border-radius:16px;text-align:center;cursor:pointer;transition:all 0.3s ease;background:#f8fdf8;">
+        <div class="role-icon" style="font-size:64px;margin-bottom:20px;">
+          <img src="https://img.icons8.com/color/96/000000/recycling.png" alt="Buyer" style="width:96px;height:96px;">
+        </div>
+        <div class="role-title" style="font-size:24px;font-weight:600;margin-bottom:12px;color:#2d5a2d;" data-translate="buyer_role">Buyer</div>
+        
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const sellerOption = document.getElementById('seller-option');
+        const buyerOption = document.getElementById('buyer-option');
+
+        if (!sellerOption || !buyerOption) {
+          console.error('Role option elements not found');
+          return;
+        }
+
+        sellerOption.addEventListener('click', function() {
+          selectRole('seller');
+        });
+
+        buyerOption.addEventListener('click', function() {
+          selectRole('buyer');
+        });
+
+        // Add hover effects
+        [sellerOption, buyerOption].forEach(card => {
+          card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px)';
+            this.style.boxShadow = '0 8px 25px rgba(47,168,79,0.15)';
+          });
+
+          card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'none';
+          });
+        });
+
+        async function selectRole(role) {
+          try {
+            // Get user data from session storage
+            const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+
+            // Store selected role in session
+            user.role = role;
+            sessionStorage.setItem('user', JSON.stringify(user));
+
+            // Redirect based on role
+            if (role === 'seller') {
+              window.location.href = 'profile.html';
+            } else if (role === 'buyer') {
+              window.location.href = 'recycler.html';
+            }
+          } catch (error) {
+            console.error('Error setting role:', error);
+            alert('Error setting role. Please try again.');
+          }
+        }
+      });
+    </script>
+  </div>
+</body>
+</html>
