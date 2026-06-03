@@ -781,10 +781,6 @@
       .fm-highlight{font-size:clamp(1.8rem,7.5vw,3rem)}
       .fn{padding:12px 24px;font-size:clamp(1.1rem,4.5vw,1.5rem)}
     }
-    /* ── SONG NAV ARROWS ── */
-    .sn-btn{background:none;border:none;color:rgba(255,255,255,.55);font-size:.95rem;cursor:pointer;padding:2px 5px;border-radius:8px;transition:color .2s,background .2s;line-height:1}
-    .sn-btn:hover{color:#fb7bb8;background:rgba(244,63,142,.12)}
-    .song-nav{display:flex;align-items:center;gap:2px;margin-left:auto;flex-shrink:0}
     .music-top{align-items:center}
     #song-title{transition:opacity .25s;font-size:.85rem}
     #song-sub{transition:opacity .25s}
@@ -954,12 +950,6 @@
             <div class="mt" id="song-title">Seeti Maar</div>
             <div class="ms" id="song-sub">🎶 Radhe • Hindi</div>
           </div>
-        </div>
-        <!-- Song prev/next arrows -->
-        <div class="song-nav">
-          <button class="sn-btn" onclick="prevSong()" title="Previous Song">◀</button>
-          <span style="font-size:.55rem;color:rgba(255,255,255,.25);padding:0 1px">🎵</span>
-          <button class="sn-btn" onclick="nextSong()" title="Next Song">▶</button>
         </div>
       </div>
       <!-- Row 2: photo controls + volume -->
@@ -1469,20 +1459,6 @@ document.addEventListener("touchend",function(e){
 var musicStarted = false;
 var ytSongOn    = false;
 var userPaused  = false;
-var curSongIdx  = 0;
-
-var songList = [
-  { title:"Seeti Maar",              movie:"Radhe",         lang:"HI", yt:"mvgRsyQYWMo" },
-  { title:"Tum Hi Ho",               movie:"Aashiqui 2",    lang:"HI", yt:"Umqb9OEw5YM" },
-  { title:"Tujhe Kitna Chahne Lage", movie:"Kabir Singh",   lang:"HI", yt:"ChQp6548n-8" },
-  { title:"Raataan Lambiyan",        movie:"Shershaah",     lang:"HI", yt:"Dm6YRJHy64c" },
-  { title:"Kesariya",                movie:"Brahmastra",    lang:"HI", yt:"BddP6Opq3aI" },
-  { title:"Tera Ban Jaunga",         movie:"Kabir Singh",   lang:"HI", yt:"mQiiw7uRngk" },
-  { title:"Thanmayaladenu",          movie:"Paramaathma",   lang:"KA", yt:"DCq4T6dGvXI" },
-  { title:"Anisuthide",              movie:"Mungaru Male",  lang:"KA", yt:"G11m-xH_h3E" },
-  { title:"Nagutha Nagutha Baalu",   movie:"Parashuram",    lang:"KA", yt:"F0m9f2oDq_k" },
-  { title:"Varaha Roopam",           movie:"Kantara",       lang:"KA", yt:"F5wnyULWBSE" }
-];
 
 function fmt(s){ var m=Math.floor(s/60); return m+":"+(Math.floor(s%60)+"").padStart(2,"0"); }
 
@@ -1490,31 +1466,6 @@ function ytCmd(cmd){
   var yt = document.getElementById("yt-song");
   if(yt && yt.contentWindow) yt.contentWindow.postMessage('{"event":"command","func":"'+cmd+'","args":""}','*');
 }
-
-function changeSong(idx){
-  curSongIdx = idx;
-  var s = songList[idx];
-  var yt = document.getElementById("yt-song");
-
-  // Fade out title, update, fade in
-  var titleEl = document.getElementById("song-title");
-  var subEl   = document.getElementById("song-sub");
-  if(titleEl){ titleEl.style.opacity="0"; setTimeout(function(){ titleEl.textContent=s.title; titleEl.style.opacity="1"; },250); }
-  if(subEl){   subEl.style.opacity="0";   setTimeout(function(){ subEl.textContent="\uD83C\uDFB6 "+s.movie+" \u2022 "+(s.lang==="KA"?"Kannada":"Hindi"); subEl.style.opacity="1"; },250); }
-
-  // Change song in YouTube iframe (autoplay=1 triggers play)
-  if(yt){ yt.src = "https://www.youtube.com/embed/"+s.yt+"?autoplay=1&enablejsapi=1&loop=1&playlist="+s.yt; }
-
-  ytSongOn = true;
-  userPaused = false;
-  document.getElementById("play-btn").textContent = "\u23F8";
-  document.getElementById("disc").classList.remove("paused");
-  document.getElementById("pfill").style.width = "0%";
-  document.getElementById("ct").textContent = "0:00";
-}
-
-function nextSong(){ changeSong((curSongIdx+1) % songList.length); }
-function prevSong(){ changeSong((curSongIdx-1+songList.length) % songList.length); }
 
 function togglePlay(){
   if(ytSongOn){
