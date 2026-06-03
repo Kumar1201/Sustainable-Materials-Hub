@@ -1405,9 +1405,9 @@ function fadeOutSong(){
       song.volume = vol;
     } else {
       song.pause();
+      clearInterval(photoTimer);
       ytSongOn = false;
-      document.getElementById("play-btn").textContent = "\u25B6";
-      document.getElementById("disc").classList.add("paused");
+      setBtnState(false);
       clearInterval(fade);
     }
   }, 120);
@@ -1478,112 +1478,97 @@ document.addEventListener("touchend",function(e){
 },{passive:true});
 
 // ══════════════════════════
-// MUSIC (YouTube-based)
+// MUSIC
 // ══════════════════════════
 var musicStarted = false;
 var ytSongOn    = false;
 var userPaused  = false;
+var isPlaying   = false;
+var isMuted     = false;
+var premuteVol  = 0.8;
 
 function fmt(s){ var m=Math.floor(s/60); return m+":"+(Math.floor(s%60)+"").padStart(2,"0"); }
 
-// ── Unified Play/Pause: controls BOTH song AND slideshow ──
-var isPlaying = false; // tracks actual playback state
-
+// ─── Update button icon + disc state ───
 function setBtnState(playing){
   var btn  = document.getElementById("play-btn");
   var disc = document.getElementById("disc");
-  if(playing){
-    if(btn)  btn.innerHTML = "&#9646;&#9646;"; // ❚❚ pause symbol
-    if(disc) disc.classList.remove("paused");
-  } else {
-    if(btn)  btn.innerHTML = "&#9654;"; // ► play symbol
-    if(disc) disc.classList.add("paused");
-  }
   isPlaying = playing;
+  if(btn){
+    btn.style.fontSize = playing ? "1rem" : "1.6rem";
+    btn.innerHTML = playing ? "&#9646;&#9646;" : "&#9654;";
+  }
+  if(disc){
+    if(playing) disc.classList.remove("paused");
+    else        disc.classList.add("paused");
+  }
 }
 
+// ─── Single button: pause/play BOTH song AND slideshow ───
 function toggleAll(){
   var song = document.getElementById("song");
   if(!song) return;
 
   if(isPlaying){
-    // ---- PAUSE ----
+    // ════ PAUSE both ════
     song.pause();
+    clearInterval(photoTimer);   // stop auto-advance
     slideshowPaused = true;
-    clearInterval(photoTimer);
     userPaused = true;
-    ytSongOn = false;
+    ytSongOn   = false;
     setBtnState(false);
   } else {
-    // ---- PLAY ----
-    song.play().then(function(){
-      slideshowPaused = false;
-      if(!slideshowReady) initSlideshow();
-      startPhotoAuto();
-      userPaused = false;
-      ytSongOn = true;
-      setBtnState(true);
-    }).catch(function(err){
-      console.log("Play failed:", err);
-      setBtnState(false);
-    });
+    // ════ PLAY both ════
+    var playPromise = song.play();
+    if(playPromise !== undefined){
+      playPromise.then(function(){
+        slideshowPaused = false;
+        clearInterval(photoTimer); // clear any leftover
+        startPhotoAuto();          // restart auto-advance
+        userPaused = false;
+        ytSongOn   = true;
+        setBtnState(true);
+      }).catch(function(err){
+        console.log("Play failed:", err);
+        setBtnState(false);
+      });
+    }
   }
 }
-
-// Keep togglePlay as alias
 function togglePlay(){ toggleAll(); }
 
-
-var isMuted = false;
-var premuteVol = 0.8;
-
+// ─── Volume slider ───
 function setVol(v){
   var song = document.getElementById("song");
-  if(!song) return;
-  song.volume = parseFloat(v);
-  isMuted = (parseFloat(v) === 0);
   var icon = document.getElementById("vol-icon");
+  if(!song) return;
+  var val = parseFloat(v);
+  song.volume = val;
+  isMuted = (val === 0);
   if(icon) icon.textContent = isMuted ? "🔇" : "🔊";
 }
 
+// ─── Mute toggle (speaker icon click) ───
 function toggleMute(){
   var song   = document.getElementById("song");
   var slider = document.getElementById("vol-sl");
   var icon   = document.getElementById("vol-icon");
   if(!song) return;
   if(!isMuted){
-    premuteVol = song.volume;
+    premuteVol = song.volume || 0.8;
     song.volume = 0;
     if(slider) slider.value = 0;
     if(icon)   icon.textContent = "🔇";
     isMuted = true;
   } else {
-    song.volume = premuteVol || 0.8;
-    if(slider) slider.value = song.volume;
+    song.volume = premuteVol;
+    if(slider) slider.value = premuteVol;
     if(icon)   icon.textContent = "🔊";
     isMuted = false;
   }
 }
 
-function seekSong(e){
-  var song = document.getElementById("song");
-  var pbar = document.getElementById("pbar");
-  if(!song || !pbar) return;
-  var rect = pbar.getBoundingClientRect();
-  var pct = (e.clientX - rect.left) / rect.width;
-  pct = Math.max(0, Math.min(1, pct));
-  // Seek within 60-second clip
-  var targetTime = pct * 60;
-  if(song.duration && targetTime <= song.duration){
-    song.currentTime = targetTime;
-  } else if(song.duration){
-    song.currentTime = Math.min(targetTime, song.duration);
-  }
-  // Update progress bar immediately
-  document.getElementById("pfill").style.width = (pct * 100) + "%";
-  document.getElementById("ct").textContent = fmt(targetTime);
-}
-
+// ─── Start music when entering page 4 ───
 function startMusicOnPage4(){
   if(musicStarted) return;
   musicStarted = true;
