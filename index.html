@@ -922,25 +922,6 @@
 <div class="page" id="p4">
   <div class="slide-page">
 
-    <!-- Portrait Photo Frame -->
-    <div class="portrait-wrap">
-      <div class="portrait-frame" id="pframe">
-        <div class="blur-bg" id="blurbg"></div>
-        <img id="photo-img" src="1.jpeg" alt="Kavya"/>
-        <!-- nav arrows -->
-        <div class="photo-arrows">
-          <button class="pa-btn" id="pa-prev">&#8249;</button>
-          <button class="pa-btn" id="pa-next">&#8250;</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Caption -->
-    <div class="photo-caption" id="pcap">Kavya (Kavuu) 💖</div>
-
-    <!-- Photo dots -->
-    <div class="photo-dots" id="pdots"></div>
-
     <!-- Music Bar -->
     <div class="music-bar">
       <!-- Row 1: song info + song navigation arrows -->
@@ -953,10 +934,7 @@
         </div>
       </div>
       <!-- Row 2: photo controls + volume -->
-      <div class="mc" style="margin-top:6px">
-        <button class="mc-btn" onclick="prevPhoto()">⏮</button>
-        <button class="mc-btn mc-play" id="play-btn" onclick="togglePlay()">▶</button>
-        <button class="mc-btn" onclick="nextPhoto()">⏭</button>
+      <div class="mc" style="margin-top:6px;justify-content:center;">
         <div class="vol-row">
           <span class="vol-icon">🔊</span>
           <input class="vol-sl" type="range" min="0" max="1" step="0.05" value="0.8" oninput="setVol(this.value)"/>
@@ -1012,9 +990,8 @@
 </div>
 
 <!-- NAV BAR -->
-<div class="nav-bar" id="nav-bar" style="display:none">
+<div class="nav-bar" id="nav-bar" style="display:none;justify-content:space-between;">
   <button class="nav-btn btn-back" id="btn-back" onclick="changePage(-1)">← Back</button>
-  <div class="nav-dots" id="nav-dots"></div>
   <button class="nav-btn btn-next" id="btn-next" onclick="changePage(1)">Next →</button>
 </div>
 
@@ -1110,21 +1087,10 @@ var startTime = null;
 var pages = [];
 for(var i=1;i<=TOTAL_PAGES;i++) pages.push(document.getElementById("p"+i));
 
-// Build nav dots (pages 2-6)
-var navDots = document.getElementById("nav-dots");
-for(var i=0;i<5;i++){
-  var d = document.createElement("div");
-  d.className = "dot" + (i===0?" on":"");
-  d.id = "navdot-"+i;
-  navDots.appendChild(d);
-}
+// Build nav dots logic removed
 
 function updateNavDots(page){
-  // page 2 = dot 0, page 3 = dot 1, etc.
-  for(var i=0;i<5;i++){
-    var el = document.getElementById("navdot-"+i);
-    if(el) el.className = "dot" + (i===(page-2)?" on":"");
-  }
+  // empty
 }
 
 function updateNavButtons(page){
@@ -1424,12 +1390,7 @@ function scheduleClipEnd(){
 function initSlideshow(){
   if(slideshowReady) return;
   slideshowReady = true;
-  buildDots();
-  document.getElementById("blurbg").style.backgroundImage="url(1.jpeg)";
-  document.getElementById("pa-prev").onclick=function(){ prevPhoto(); };
-  document.getElementById("pa-next").onclick=function(){ nextPhoto(); };
-  startPhotoAuto();
-  scheduleClipEnd();
+  // slideshow UI removed per user request
 }
 
 // keyboard
@@ -1497,10 +1458,7 @@ function startMusicOnPage4(){
           document.getElementById("disc").classList.add("paused");
         });
       }
-    }
     userPaused=false;
-    document.getElementById("play-btn").textContent="\u23F8";
-    document.getElementById("disc").classList.remove("paused");
   },800);
 }
 
