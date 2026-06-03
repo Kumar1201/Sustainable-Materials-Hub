@@ -1634,6 +1634,16 @@ document.addEventListener("DOMContentLoaded", function() {
       var pct = (curT / clipDur) * 100;
       document.getElementById("pfill").style.width = pct + "%";
     });
+
+    // When song ends naturally -> stop slideshow too
+    song.addEventListener("ended", function(){
+      clearTimeout(clipEndTimer);
+      clearInterval(photoTimer);
+      slideshowPaused = true;
+      ytSongOn  = false;
+      clipEnded = true;
+      setBtnState(false);
+    });
   }
 });
 
