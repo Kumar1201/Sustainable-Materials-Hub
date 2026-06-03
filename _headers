@@ -1,0 +1,8 @@
+/*.jpeg
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/*.jpg
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/*.png
+  Cache-Control: no-cache, no-store, must-revalidate
