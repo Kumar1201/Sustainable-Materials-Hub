@@ -955,7 +955,7 @@
           box-shadow:0 6px 24px rgba(244,63,142,.5);
           display:flex;align-items:center;justify-content:center;
           transition:transform .2s,box-shadow .2s;
-        ">⏸️</button>
+        ">&#9654;</button>
       </div>
       <!-- Row 3: volume -->
       <div class="mc" style="margin-top:4px;justify-content:center;">
@@ -1189,8 +1189,6 @@ function changePage(dir){
 
 function onPageEnter(page){
   var song = document.getElementById("song");
-  var btn  = document.getElementById("play-btn");
-  var disc = document.getElementById("disc");
 
   if(page===2){ doFireworks(); }
 
@@ -1198,8 +1196,7 @@ function onPageEnter(page){
   if(page !== 4 && song && !song.paused){
     song.pause();
     ytSongOn = false;
-    if(btn)  btn.textContent = "▶️";
-    if(disc) disc.classList.add("paused");
+    setBtnState(false);
   }
 
   // ── Entering page 4 ──
@@ -1208,12 +1205,12 @@ function onPageEnter(page){
     startMusicOnPage4();
     // Resume if user didn't manually pause
     if(musicStarted && !userPaused && song && song.paused){
-      song.play().catch(function(){});
-      ytSongOn = true;
-      slideshowPaused = false;
-      startPhotoAuto();
-      if(btn)  btn.textContent = "⏸️";
-      if(disc) disc.classList.remove("paused");
+      song.play().then(function(){
+        ytSongOn = true;
+        slideshowPaused = false;
+        startPhotoAuto();
+        setBtnState(true);
+      }).catch(function(){});
     }
   }
 }
@@ -1490,34 +1487,50 @@ var userPaused  = false;
 function fmt(s){ var m=Math.floor(s/60); return m+":"+(Math.floor(s%60)+"").padStart(2,"0"); }
 
 // ── Unified Play/Pause: controls BOTH song AND slideshow ──
-function toggleAll(){
-  var song = document.getElementById("song");
+var isPlaying = false; // tracks actual playback state
+
+function setBtnState(playing){
   var btn  = document.getElementById("play-btn");
   var disc = document.getElementById("disc");
+  if(playing){
+    if(btn)  btn.innerHTML = "&#9646;&#9646;"; // ❚❚ pause symbol
+    if(disc) disc.classList.remove("paused");
+  } else {
+    if(btn)  btn.innerHTML = "&#9654;"; // ► play symbol
+    if(disc) disc.classList.add("paused");
+  }
+  isPlaying = playing;
+}
+
+function toggleAll(){
+  var song = document.getElementById("song");
   if(!song) return;
 
-  if(!song.paused){
-    // PAUSE both
+  if(isPlaying){
+    // ---- PAUSE ----
     song.pause();
     slideshowPaused = true;
     clearInterval(photoTimer);
     userPaused = true;
     ytSongOn = false;
-    if(btn)  btn.textContent  = "▶️";
-    if(disc) disc.classList.add("paused");
+    setBtnState(false);
   } else {
-    // PLAY both
-    song.play().catch(function(){});
-    slideshowPaused = false;
-    startPhotoAuto();
-    userPaused = false;
-    ytSongOn = true;
-    if(btn)  btn.textContent  = "⏸️";
-    if(disc) disc.classList.remove("paused");
+    // ---- PLAY ----
+    song.play().then(function(){
+      slideshowPaused = false;
+      if(!slideshowReady) initSlideshow();
+      startPhotoAuto();
+      userPaused = false;
+      ytSongOn = true;
+      setBtnState(true);
+    }).catch(function(err){
+      console.log("Play failed:", err);
+      setBtnState(false);
+    });
   }
 }
 
-// Keep togglePlay as alias so any existing references still work
+// Keep togglePlay as alias
 function togglePlay(){ toggleAll(); }
 
 
@@ -1576,29 +1589,22 @@ function startMusicOnPage4(){
   musicStarted = true;
   setTimeout(function(){
     var song   = document.getElementById("song");
-    var btn    = document.getElementById("play-btn");
-    var disc   = document.getElementById("disc");
     var slider = document.getElementById("vol-sl");
     if(song){
       song.volume = 0.8;
       if(slider) slider.value = 0.8;
-      var p = song.play();
-      if(p !== undefined){
-        p.then(function(){
-          // Autoplay succeeded
-          ytSongOn = true;
-          userPaused = false;
-          if(btn)  btn.textContent = "⏸️";
-          if(disc) disc.classList.remove("paused");
-        }).catch(function(){
-          // Autoplay blocked — show play button
-          console.log("Autoplay blocked by browser");
-          ytSongOn = false;
-          userPaused = true;
-          if(btn)  btn.textContent = "▶️";
-          if(disc) disc.classList.add("paused");
-        });
-      }
+      song.play().then(function(){
+        // Autoplay succeeded
+        ytSongOn = true;
+        userPaused = false;
+        setBtnState(true);
+      }).catch(function(){
+        // Autoplay blocked by browser - user must tap play
+        console.log("Autoplay blocked");
+        ytSongOn = false;
+        userPaused = false; // allow resume
+        setBtnState(false);
+      });
     }
   }, 800);
 }
