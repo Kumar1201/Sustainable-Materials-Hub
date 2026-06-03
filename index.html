@@ -935,9 +935,21 @@
 
     <!-- Photo dots removed -->
 
+    <!-- Slideshow Play/Pause Button -->
+    <div style="display:flex;justify-content:center;margin-top:10px;">
+      <button id="slideshow-pp-btn" onclick="toggleSlideshow()" style="
+        background:linear-gradient(135deg,var(--rose),var(--violet));
+        border:none;border-radius:50%;width:52px;height:52px;
+        color:#fff;font-size:1.5rem;cursor:pointer;
+        box-shadow:0 6px 24px rgba(244,63,142,.5);
+        display:flex;align-items:center;justify-content:center;
+        transition:transform .2s,box-shadow .2s;
+      ">⏸️</button>
+    </div>
+
     <!-- Music Bar -->
     <div class="music-bar">
-      <!-- Row 1: song info + song navigation arrows -->
+      <!-- Row 1: song info + play button -->
       <div class="music-top">
         <div class="music-info" style="flex:1;min-width:0">
           <div class="disc" id="disc">🎵</div>
@@ -945,21 +957,24 @@
             <div class="mt" id="song-title">Radhe</div>
           </div>
         </div>
+        <div class="mc">
+          <button class="mc-btn mc-play" id="play-btn" onclick="togglePlay()">⏸</button>
+        </div>
       </div>
-      <!-- Row 2: photo controls + volume -->
+      <!-- Row 2: volume -->
       <div class="mc" style="margin-top:6px;justify-content:center;">
         <div class="vol-row">
           <span class="vol-icon">🔊</span>
           <input class="vol-sl" type="range" min="0" max="1" step="0.05" value="0.8" oninput="setVol(this.value)"/>
         </div>
       </div>
-      <!-- Row 3: progress bar -->
+      <!-- Row 3: progress bar (seekable) -->
       <div class="prog-row">
         <span class="ptime" id="ct">0:00</span>
-        <div class="pbar" id="pbar">
+        <div class="pbar" id="pbar" onclick="seekSong(event)" style="cursor:pointer">
           <div class="pfill" id="pfill"><div class="pdot2"></div></div>
         </div>
-        <span class="ptime" id="dt">3:49</span>
+        <span class="ptime" id="dt">1:00</span>
       </div>
     </div>
 
@@ -1262,6 +1277,7 @@ function doFireworks(){
 var photoIdx = 0;
 var slideshowReady = false;
 var photoTimer = null;
+var slideshowPaused = false;
 
 function buildDots(){
   var c = document.getElementById("pdots");
@@ -1385,9 +1401,26 @@ function fadeOutSong(){
 function nextPhoto(){
   clearInterval(photoTimer);
   goPhoto(photoIdx+1);
-  startPhotoAuto();
+  if(!slideshowPaused) startPhotoAuto();
 }
-function prevPhoto(){ clearInterval(photoTimer); goPhoto(photoIdx-1); startPhotoAuto(); }
+function prevPhoto(){ clearInterval(photoTimer); goPhoto(photoIdx-1); if(!slideshowPaused) startPhotoAuto(); }
+
+function toggleSlideshow(){
+  var btn = document.getElementById("slideshow-pp-btn");
+  if(slideshowPaused){
+    // Resume slideshow
+    slideshowPaused = false;
+    startPhotoAuto();
+    if(btn) btn.textContent = "⏸️";
+    btn.style.boxShadow = "0 6px 24px rgba(244,63,142,.5)";
+  } else {
+    // Pause slideshow
+    slideshowPaused = true;
+    clearInterval(photoTimer);
+    if(btn) btn.textContent = "▶️";
+    btn.style.boxShadow = "0 6px 24px rgba(124,58,237,.5)";
+  }
+}
 
 // 43 photos in exactly 60 seconds = ~1395ms per photo
 var CLIP_DURATION   = 60000;
@@ -1473,7 +1506,24 @@ function setVol(v){
   if(song) song.volume = parseFloat(v);
 }
 
-function seekSong(e){}
+function seekSong(e){
+  var song = document.getElementById("song");
+  var pbar = document.getElementById("pbar");
+  if(!song || !pbar) return;
+  var rect = pbar.getBoundingClientRect();
+  var pct = (e.clientX - rect.left) / rect.width;
+  pct = Math.max(0, Math.min(1, pct));
+  // Seek within 60-second clip
+  var targetTime = pct * 60;
+  if(song.duration && targetTime <= song.duration){
+    song.currentTime = targetTime;
+  } else if(song.duration){
+    song.currentTime = Math.min(targetTime, song.duration);
+  }
+  // Update progress bar immediately
+  document.getElementById("pfill").style.width = (pct * 100) + "%";
+  document.getElementById("ct").textContent = fmt(targetTime);
+}
 
 function startMusicOnPage4(){
   if(musicStarted) return;
@@ -1503,9 +1553,11 @@ document.addEventListener("DOMContentLoaded", function() {
   if(song){
     song.addEventListener("timeupdate", function() {
       if(!song.duration) return;
-      document.getElementById("ct").textContent = fmt(song.currentTime);
-      document.getElementById("dt").textContent = fmt(song.duration);
-      var pct = (song.currentTime / song.duration) * 100;
+      var clipDur = 60; // show as 1:00 (60 seconds)
+      var curT = Math.min(song.currentTime, clipDur);
+      document.getElementById("ct").textContent = fmt(curT);
+      document.getElementById("dt").textContent = "1:00";
+      var pct = (curT / clipDur) * 100;
       document.getElementById("pfill").style.width = pct + "%";
     });
   }
