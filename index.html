@@ -1454,10 +1454,13 @@ function startMusicOnPage4(){
         p.catch(function(e){ 
           console.log("Autoplay blocked by browser"); 
           userPaused = true;
-          document.getElementById("play-btn").textContent="\u25B6";
-          document.getElementById("disc").classList.add("paused");
+          var pbtn = document.getElementById("play-btn");
+          if(pbtn) pbtn.textContent="\u25B6";
+          var disc = document.getElementById("disc");
+          if(disc) disc.classList.add("paused");
         });
       }
+    }
     userPaused=false;
   },800);
 }
