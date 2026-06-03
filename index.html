@@ -351,12 +351,9 @@
       z-index:2;
     }
 
-    /* Photo nav arrows */
+    /* Photo nav arrows (hidden per user request, but div remains for JS insertBefore target) */
     .photo-arrows{
-      position:absolute;top:50%;left:0;right:0;
-      display:flex;justify-content:space-between;
-      transform:translateY(-50%);z-index:10;
-      padding:0 8px;pointer-events:none;
+      display:none;
     }
     .pa-btn{
       pointer-events:all;
