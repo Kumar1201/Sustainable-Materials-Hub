@@ -935,21 +935,9 @@
 
     <!-- Photo dots removed -->
 
-    <!-- Slideshow Play/Pause Button -->
-    <div style="display:flex;justify-content:center;margin-top:10px;">
-      <button id="slideshow-pp-btn" onclick="toggleSlideshow()" style="
-        background:linear-gradient(135deg,var(--rose),var(--violet));
-        border:none;border-radius:50%;width:52px;height:52px;
-        color:#fff;font-size:1.5rem;cursor:pointer;
-        box-shadow:0 6px 24px rgba(244,63,142,.5);
-        display:flex;align-items:center;justify-content:center;
-        transition:transform .2s,box-shadow .2s;
-      ">⏸️</button>
-    </div>
-
     <!-- Music Bar -->
     <div class="music-bar">
-      <!-- Row 1: song info + play button -->
+      <!-- Row 1: song info -->
       <div class="music-top">
         <div class="music-info" style="flex:1;min-width:0">
           <div class="disc" id="disc">🎵</div>
@@ -957,18 +945,26 @@
             <div class="mt" id="song-title">Radhe</div>
           </div>
         </div>
-        <div class="mc">
-          <button class="mc-btn mc-play" id="play-btn" onclick="togglePlay()">⏸</button>
-        </div>
       </div>
-      <!-- Row 2: volume -->
-      <div class="mc" style="margin-top:6px;justify-content:center;">
+      <!-- Row 2: Single unified Play/Pause button (controls both song + slideshow) -->
+      <div style="display:flex;justify-content:center;margin:8px 0 4px;">
+        <button id="play-btn" onclick="toggleAll()" style="
+          background:linear-gradient(135deg,var(--rose),var(--violet));
+          border:none;border-radius:50%;width:56px;height:56px;
+          color:#fff;font-size:1.6rem;cursor:pointer;
+          box-shadow:0 6px 24px rgba(244,63,142,.5);
+          display:flex;align-items:center;justify-content:center;
+          transition:transform .2s,box-shadow .2s;
+        ">⏸️</button>
+      </div>
+      <!-- Row 3: volume -->
+      <div class="mc" style="margin-top:4px;justify-content:center;">
         <div class="vol-row">
           <span class="vol-icon">🔊</span>
           <input class="vol-sl" type="range" min="0" max="1" step="0.05" value="0.8" oninput="setVol(this.value)"/>
         </div>
       </div>
-      <!-- Row 3: progress bar (seekable) -->
+      <!-- Row 4: progress bar (seekable) -->
       <div class="prog-row">
         <span class="ptime" id="ct">0:00</span>
         <div class="pbar" id="pbar" onclick="seekSong(event)" style="cursor:pointer">
@@ -1405,22 +1401,8 @@ function nextPhoto(){
 }
 function prevPhoto(){ clearInterval(photoTimer); goPhoto(photoIdx-1); if(!slideshowPaused) startPhotoAuto(); }
 
-function toggleSlideshow(){
-  var btn = document.getElementById("slideshow-pp-btn");
-  if(slideshowPaused){
-    // Resume slideshow
-    slideshowPaused = false;
-    startPhotoAuto();
-    if(btn) btn.textContent = "⏸️";
-    btn.style.boxShadow = "0 6px 24px rgba(244,63,142,.5)";
-  } else {
-    // Pause slideshow
-    slideshowPaused = true;
-    clearInterval(photoTimer);
-    if(btn) btn.textContent = "▶️";
-    btn.style.boxShadow = "0 6px 24px rgba(124,58,237,.5)";
-  }
-}
+  // (toggleSlideshow removed — now handled by unified toggleAll below)
+
 
 // 43 photos in exactly 60 seconds = ~1395ms per photo
 var CLIP_DURATION   = 60000;
@@ -1485,21 +1467,37 @@ var userPaused  = false;
 
 function fmt(s){ var m=Math.floor(s/60); return m+":"+(Math.floor(s%60)+"").padStart(2,"0"); }
 
-function togglePlay(){
+// ── Unified Play/Pause: controls BOTH song AND slideshow ──
+function toggleAll(){
   var song = document.getElementById("song");
+  var btn  = document.getElementById("play-btn");
+  var disc = document.getElementById("disc");
   if(!song) return;
+
   if(!song.paused){
+    // PAUSE both
     song.pause();
-    userPaused=true;
-    var pb = document.getElementById("play-btn"); if(pb) pb.textContent="\u25B6";
-    var disc = document.getElementById("disc"); if(disc) disc.classList.add("paused");
+    slideshowPaused = true;
+    clearInterval(photoTimer);
+    userPaused = true;
+    ytSongOn = false;
+    if(btn)  btn.textContent  = "▶️";
+    if(disc) disc.classList.add("paused");
   } else {
-    song.play();
-    userPaused=false;
-    var pb2 = document.getElementById("play-btn"); if(pb2) pb2.textContent="\u23F8";
-    var disc2 = document.getElementById("disc"); if(disc2) disc2.classList.remove("paused");
+    // PLAY both
+    song.play().catch(function(){});
+    slideshowPaused = false;
+    startPhotoAuto();
+    userPaused = false;
+    ytSongOn = true;
+    if(btn)  btn.textContent  = "⏸️";
+    if(disc) disc.classList.remove("paused");
   }
 }
+
+// Keep togglePlay as alias so any existing references still work
+function togglePlay(){ toggleAll(); }
+
 
 function setVol(v){
   var song = document.getElementById("song");
