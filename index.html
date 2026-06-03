@@ -312,7 +312,7 @@
 
     /* ── PAGE 4: PHOTO SLIDESHOW ── */
     #p4{padding:0;justify-content:flex-start}
-    .slide-page{width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:20px 16px 90px}
+    .slide-page{width:100%;min-height:100vh;height:auto;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:20px 16px 120px;gap:12px}
 
     /* Portrait photo frame */
     .portrait-wrap{
@@ -947,7 +947,7 @@
         <div class="music-info" style="flex:1;min-width:0">
           <div class="disc" id="disc">🎵</div>
           <div class="music-meta" style="min-width:0;flex:1">
-            <div class="mt" id="song-title">Seeti Maar</div>
+            <div class="mt" id="song-title">Radhe</div>
             <div class="ms" id="song-sub">🎶 Radhe • Hindi</div>
           </div>
         </div>
@@ -1461,14 +1461,14 @@ function fmt(s){ var m=Math.floor(s/60); return m+":"+(Math.floor(s%60)+"").padS
 function togglePlay(){
   var song = document.getElementById("song");
   if(!song) return;
-  if(ytSongOn){
+  if(!song.paused){
     song.pause();
-    ytSongOn=false; userPaused=true;
+    userPaused=true;
     document.getElementById("play-btn").textContent="\u25B6";
     document.getElementById("disc").classList.add("paused");
   } else {
     song.play();
-    ytSongOn=true; userPaused=false;
+    userPaused=false;
     document.getElementById("play-btn").textContent="\u23F8";
     document.getElementById("disc").classList.remove("paused");
   }
@@ -1488,9 +1488,17 @@ function startMusicOnPage4(){
     var song = document.getElementById("song");
     if(song){
       song.volume = 0.8;
-      song.play();
+      var p = song.play();
+      if(p !== undefined) {
+        p.catch(function(e){ 
+          console.log("Autoplay blocked by browser"); 
+          userPaused = true;
+          document.getElementById("play-btn").textContent="\u25B6";
+          document.getElementById("disc").classList.add("paused");
+        });
+      }
     }
-    ytSongOn=true; userPaused=false;
+    userPaused=false;
     document.getElementById("play-btn").textContent="\u23F8";
     document.getElementById("disc").classList.remove("paused");
   },800);
