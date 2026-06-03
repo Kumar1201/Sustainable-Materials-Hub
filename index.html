@@ -336,19 +336,27 @@
       box-shadow:0 16px 48px rgba(244,63,142,.4),0 4px 16px rgba(0,0,0,.5);
       border:2px solid rgba(244,63,142,.35);
       background:#0a0015;
+      transform:translateZ(0);
+      -webkit-transform:translateZ(0);
     }
     .portrait-frame .blur-bg{
       position:absolute;inset:-10px;
       background-size:cover;background-position:center;
-      filter:blur(18px) brightness(.4);
-      transform:scale(1.1);
-      transition:background-image .5s;
+      filter:blur(12px) brightness(.4);
+      transform:scale(1.1) translateZ(0);
+      -webkit-transform:scale(1.1) translateZ(0);
+      will-change:opacity;
     }
     .portrait-frame img{
       position:absolute;inset:0;
       width:100%;height:100%;
       object-fit:contain;
       z-index:2;
+      transform:translateZ(0);
+      -webkit-transform:translateZ(0);
+      will-change:opacity;
+      backface-visibility:hidden;
+      -webkit-backface-visibility:hidden;
     }
 
     /* Photo nav arrows (hidden per user request, but div remains for JS insertBefore target) */
@@ -1322,54 +1330,28 @@ function goPhoto(idx){
   var trans  = TRANS[transIdx % TRANS.length];
   transIdx++;
 
-  // Create incoming image
+  // Create new image with GPU-friendly styles
   var newImg = document.createElement("img");
   newImg.src = photos[photoIdx].src;
   newImg.alt = "Kavya";
-  newImg.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:3;";
+  // Start transparent, composited on its own GPU layer
+  newImg.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:3;opacity:0;transform:translateZ(0);-webkit-transform:translateZ(0);backface-visibility:hidden;-webkit-backface-visibility:hidden;";
   frame.appendChild(newImg);
 
-  // ── Apply chosen transition ──
-  if(trans === "slide"){
-    // Old exits left or right, new enters from opposite side
-    var exitDir  = goingForward ? "-100%" : "100%";
-    var enterDir = goingForward ? "100%"  : "-100%";
-    oldImg.style.transition = "transform .55s cubic-bezier(.77,0,.18,1), opacity .4s";
-    oldImg.style.transform  = "translateX("+exitDir+")";
-    oldImg.style.opacity    = "0";
-    newImg.style.transform  = "translateX("+enterDir+")";
-    void newImg.offsetWidth; // force reflow
-    newImg.style.transition = "transform .55s cubic-bezier(.77,0,.18,1)";
-    newImg.style.transform  = "translateX(0)";
+  // Use requestAnimationFrame so browser has composited before animating
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      // Fade old out
+      oldImg.style.transition = "opacity 0.4s ease";
+      oldImg.style.opacity    = "0";
+      // Fade new in
+      newImg.style.transition = "opacity 0.4s ease";
+      newImg.style.opacity    = "1";
+    });
+  });
 
-  } else if(trans === "zoom"){
-    // Old shrinks and fades, new grows in
-    oldImg.style.transition = "transform .4s ease, opacity .4s";
-    oldImg.style.transform  = "scale(1.08)";
-    oldImg.style.opacity    = "0";
-    newImg.style.transform  = "scale(0.88)";
-    newImg.style.opacity    = "0";
-    void newImg.offsetWidth;
-    newImg.style.transition = "transform .5s cubic-bezier(.34,1.3,.64,1), opacity .45s";
-    newImg.style.transform  = "scale(1)";
-    newImg.style.opacity    = "1";
-
-  } else { // fade
-    oldImg.style.transition = "opacity .45s";
-    oldImg.style.opacity    = "0";
-    newImg.style.opacity    = "0";
-    void newImg.offsetWidth;
-    newImg.style.transition = "opacity .45s";
-    newImg.style.opacity    = "1";
-  }
-
-  // Blur background cross-fade
-  blurbg.style.transition = "opacity .6s";
-  blurbg.style.opacity    = "0";
-  setTimeout(function(){
-    blurbg.style.backgroundImage = "url("+photos[photoIdx].src+")";
-    blurbg.style.opacity = "1";
-  }, 250);
+  // Blur background - just swap instantly (no heavy opacity animation)
+  blurbg.style.backgroundImage = "url("+photos[photoIdx].src+")";
 
   // Caption fade
   var cap = document.getElementById("pcap");
@@ -1378,14 +1360,14 @@ function goPhoto(idx){
   setTimeout(function(){
     cap.textContent = photos[photoIdx].cap;
     cap.style.opacity = "1";
-  }, 280);
+  }, 250);
 
-  // Clean up old image after transition
+  // Clean up old image after fade
   setTimeout(function(){
     if(oldImg.parentNode) oldImg.remove();
     newImg.id = "photo-img";
-    newImg.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:2;transition:none;transform:none;opacity:1;";
-  }, 600);
+    newImg.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:2;transition:none;transform:translateZ(0);-webkit-transform:translateZ(0);opacity:1;backface-visibility:hidden;";
+  }, 450);
 }
 
 // fade out song smoothly (song only — slideshow keeps running)
