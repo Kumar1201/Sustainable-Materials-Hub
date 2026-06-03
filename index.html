@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -1392,7 +1392,7 @@ function goPhoto(idx){
   }, 600);
 }
 
-// fade out song smoothly
+// fade out song smoothly (song only — slideshow keeps running)
 function fadeOutSong(){
   var song = document.getElementById("song");
   if(!song) return;
@@ -1403,7 +1403,6 @@ function fadeOutSong(){
       song.volume = vol;
     } else {
       song.pause();
-      clearInterval(photoTimer);
       ytSongOn = false;
       setBtnState(false);
       clearInterval(fade);
@@ -1411,51 +1410,34 @@ function fadeOutSong(){
   }, 120);
 }
 
-function nextPhoto(){
-  clearInterval(photoTimer);
-  goPhoto(photoIdx+1);
-  if(!slideshowPaused) startPhotoAuto();
-}
-function prevPhoto(){ clearInterval(photoTimer); goPhoto(photoIdx-1); if(!slideshowPaused) startPhotoAuto(); }
+function nextPhoto(){ goPhoto(photoIdx + 1); }
+function prevPhoto(){ goPhoto(photoIdx - 1); }
 
-  // (toggleSlideshow removed — now handled by unified toggleAll below)
+// PHOTO_INTERVAL: time per photo (~1395ms for 43 photos)
+var PHOTO_INTERVAL = Math.round(60000 / photos.length);
 
-
-// 43 photos in exactly 60 seconds = ~1395ms per photo
-var CLIP_DURATION   = 60000;
-var PHOTO_INTERVAL  = Math.round(CLIP_DURATION / photos.length);
-var clipEndTimer    = null;
-
+// KEY FIX: always clear old interval before starting new one
+// This prevents multiple stacked intervals accumulating
 function startPhotoAuto(){
-  photoTimer = setInterval(function(){ nextPhoto(); }, PHOTO_INTERVAL);
+  clearInterval(photoTimer);
+  photoTimer = setInterval(function(){
+    if(!slideshowPaused) nextPhoto();
+  }, PHOTO_INTERVAL);
 }
 
-function scheduleClipEnd(){
-  clearTimeout(clipEndTimer);
-  clipEndTimer = setTimeout(function(){
-    clearInterval(photoTimer);
-    var cap = document.getElementById("pcap");
-    if(cap){
-      cap.style.transition="opacity .5s";
-      cap.style.opacity="0";
-      setTimeout(function(){
-        cap.textContent="\uD83C\uDF82 Happy Birthday Kavya! \uD83C\uDF38\uD83D\uDC96";
-        cap.style.opacity="1";
-      },500);
-    }
-    fadeOutSong();
-  }, CLIP_DURATION);
+function stopPhotoAuto(){
+  clearInterval(photoTimer);
+  photoTimer = null;
 }
 
 function initSlideshow(){
   if(slideshowReady) return;
   slideshowReady = true;
   buildDots();
-  document.getElementById("blurbg").style.backgroundImage="url(1.jpeg)";
-  var pp = document.getElementById("pa-prev"); if(pp) pp.onclick=function(){ prevPhoto(); };
-  var pn = document.getElementById("pa-next"); if(pn) pn.onclick=function(){ nextPhoto(); };
-  startPhotoAuto();
-  scheduleClipEnd();
+  document.getElementById("blurbg").style.backgroundImage = "url(1.jpeg)";
+  var pp = document.getElementById("pa-prev"); if(pp) pp.onclick = prevPhoto;
+  var pn = document.getElementById("pa-next"); if(pn) pn.onclick = nextPhoto;
+  startPhotoAuto(); // loops forever - no scheduleClipEnd
 }
 
 // keyboard
