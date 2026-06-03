@@ -975,11 +975,6 @@
   </div>
 </div>
 
-<!-- Hidden YouTube player (fixed, invisible) -->
-<iframe id="yt-song"
-  style="position:fixed;width:1px;height:1px;opacity:.01;pointer-events:none;top:-2px;left:-2px"
-  src="https://www.youtube.com/embed/mvgRsyQYWMo?enablejsapi=1&loop=1&playlist=mvgRsyQYWMo"
-  allow="autoplay; encrypted-media" allowfullscreen></iframe>
 
 <!-- ════════════════════════════════
      PAGE 5 — WISHES
@@ -1376,14 +1371,15 @@ function goPhoto(idx){
 
 // fade out song smoothly
 function fadeOutSong(){
-  var vol = 80;
+  var song = document.getElementById("song");
+  if(!song) return;
+  var vol = song.volume;
   var fade = setInterval(function(){
-    vol -= 4;
+    vol -= 0.05;
     if(vol > 0){
-      var yt = document.getElementById("yt-song");
-      if(yt && yt.contentWindow) yt.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[\''+vol+'\']}','*');
+      song.volume = vol;
     } else {
-      ytCmd("pauseVideo");
+      song.pause();
       ytSongOn = false;
       document.getElementById("play-btn").textContent = "\u25B6";
       document.getElementById("disc").classList.add("paused");
@@ -1462,19 +1458,16 @@ var userPaused  = false;
 
 function fmt(s){ var m=Math.floor(s/60); return m+":"+(Math.floor(s%60)+"").padStart(2,"0"); }
 
-function ytCmd(cmd){
-  var yt = document.getElementById("yt-song");
-  if(yt && yt.contentWindow) yt.contentWindow.postMessage('{"event":"command","func":"'+cmd+'","args":""}','*');
-}
-
 function togglePlay(){
+  var song = document.getElementById("song");
+  if(!song) return;
   if(ytSongOn){
-    ytCmd("pauseVideo");
+    song.pause();
     ytSongOn=false; userPaused=true;
     document.getElementById("play-btn").textContent="\u25B6";
     document.getElementById("disc").classList.add("paused");
   } else {
-    ytCmd("playVideo");
+    song.play();
     ytSongOn=true; userPaused=false;
     document.getElementById("play-btn").textContent="\u23F8";
     document.getElementById("disc").classList.remove("paused");
@@ -1482,9 +1475,8 @@ function togglePlay(){
 }
 
 function setVol(v){
-  var vol=Math.round(parseFloat(v)*100);
-  var yt=document.getElementById("yt-song");
-  if(yt && yt.contentWindow) yt.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[\''+vol+'\']}','*');
+  var song = document.getElementById("song");
+  if(song) song.volume = parseFloat(v);
 }
 
 function seekSong(e){}
@@ -1493,12 +1485,29 @@ function startMusicOnPage4(){
   if(musicStarted) return;
   musicStarted=true;
   setTimeout(function(){
-    ytCmd("playVideo");
+    var song = document.getElementById("song");
+    if(song){
+      song.volume = 0.8;
+      song.play();
+    }
     ytSongOn=true; userPaused=false;
     document.getElementById("play-btn").textContent="\u23F8";
     document.getElementById("disc").classList.remove("paused");
   },800);
 }
+
+document.addEventListener("DOMContentLoaded", function() {
+  var song = document.getElementById("song");
+  if(song){
+    song.addEventListener("timeupdate", function() {
+      if(!song.duration) return;
+      document.getElementById("ct").textContent = fmt(song.currentTime);
+      document.getElementById("dt").textContent = fmt(song.duration);
+      var pct = (song.currentTime / song.duration) * 100;
+      document.getElementById("pfill").style.width = pct + "%";
+    });
+  }
+});
 
 
 // ══════════════════════════
