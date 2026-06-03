@@ -922,6 +922,19 @@
 <div class="page" id="p4">
   <div class="slide-page">
 
+    <!-- Portrait Photo Frame -->
+    <div class="portrait-wrap">
+      <div class="portrait-frame" id="pframe">
+        <div class="blur-bg" id="blurbg"></div>
+        <img id="photo-img" src="1.jpeg" alt="Kavya"/>
+      </div>
+    </div>
+
+    <!-- Caption -->
+    <div class="photo-caption" id="pcap">Kavya (Kavuu) 💖</div>
+
+    <!-- Photo dots removed -->
+
     <!-- Music Bar -->
     <div class="music-bar">
       <!-- Row 1: song info + song navigation arrows -->
@@ -1087,10 +1100,23 @@ var startTime = null;
 var pages = [];
 for(var i=1;i<=TOTAL_PAGES;i++) pages.push(document.getElementById("p"+i));
 
-// Build nav dots logic removed
+// Build nav dots (pages 2-6)
+var navDots = document.getElementById("nav-dots");
+if(navDots){
+  for(var i=0;i<5;i++){
+    var d = document.createElement("div");
+    d.className = "dot" + (i===0?" on":"");
+    d.id = "navdot-"+i;
+    navDots.appendChild(d);
+  }
+}
 
 function updateNavDots(page){
-  // empty
+  // page 2 = dot 0, page 3 = dot 1, etc.
+  for(var i=0;i<5;i++){
+    var el = document.getElementById("navdot-"+i);
+    if(el) el.className = "dot" + (i===(page-2)?" on":"");
+  }
 }
 
 function updateNavButtons(page){
@@ -1239,14 +1265,16 @@ var photoTimer = null;
 
 function buildDots(){
   var c = document.getElementById("pdots");
-  c.innerHTML="";
-  photos.forEach(function(p,i){
-    var d=document.createElement("div");
-    d.className="pdot"+(i===0?" on":"");
-    d.id="pd"+i;
-    d.onclick=(function(idx){return function(){goPhoto(idx);};})(i);
-    c.appendChild(d);
-  });
+  if(c){
+    c.innerHTML="";
+    photos.forEach(function(p,i){
+      var d=document.createElement("div");
+      d.className="pdot"+(i===0?" on":"");
+      d.id="pd"+i;
+      d.onclick=(function(idx){return function(){goPhoto(idx);};})(i);
+      c.appendChild(d);
+    });
+  }
 }
 
 // transition cycle: slide, zoom, fade, slide, zoom, fade...
@@ -1390,7 +1418,12 @@ function scheduleClipEnd(){
 function initSlideshow(){
   if(slideshowReady) return;
   slideshowReady = true;
-  // slideshow UI removed per user request
+  buildDots();
+  document.getElementById("blurbg").style.backgroundImage="url(1.jpeg)";
+  var pp = document.getElementById("pa-prev"); if(pp) pp.onclick=function(){ prevPhoto(); };
+  var pn = document.getElementById("pa-next"); if(pn) pn.onclick=function(){ nextPhoto(); };
+  startPhotoAuto();
+  scheduleClipEnd();
 }
 
 // keyboard
@@ -1425,13 +1458,13 @@ function togglePlay(){
   if(!song.paused){
     song.pause();
     userPaused=true;
-    document.getElementById("play-btn").textContent="\u25B6";
-    document.getElementById("disc").classList.add("paused");
+    var pb = document.getElementById("play-btn"); if(pb) pb.textContent="\u25B6";
+    var disc = document.getElementById("disc"); if(disc) disc.classList.add("paused");
   } else {
     song.play();
     userPaused=false;
-    document.getElementById("play-btn").textContent="\u23F8";
-    document.getElementById("disc").classList.remove("paused");
+    var pb2 = document.getElementById("play-btn"); if(pb2) pb2.textContent="\u23F8";
+    var disc2 = document.getElementById("disc"); if(disc2) disc2.classList.remove("paused");
   }
 }
 
@@ -1454,14 +1487,14 @@ function startMusicOnPage4(){
         p.catch(function(e){ 
           console.log("Autoplay blocked by browser"); 
           userPaused = true;
-          var pbtn = document.getElementById("play-btn");
-          if(pbtn) pbtn.textContent="\u25B6";
-          var disc = document.getElementById("disc");
-          if(disc) disc.classList.add("paused");
+          var pb = document.getElementById("play-btn"); if(pb) pb.textContent="\u25B6";
+          var disc = document.getElementById("disc"); if(disc) disc.classList.add("paused");
         });
       }
     }
     userPaused=false;
+    var pb2 = document.getElementById("play-btn"); if(pb2) pb2.textContent="\u23F8";
+    var disc2 = document.getElementById("disc"); if(disc2) disc2.classList.remove("paused");
   },800);
 }
 
