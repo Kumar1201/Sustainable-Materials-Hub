@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -329,8 +329,9 @@
     .portrait-frame{
       position:relative;
       width:min(280px, 80vw);
-      height:100%;
-      max-height:480px;
+      height:calc(100vh - 280px);
+      max-height:460px;
+      min-height:220px;
       border-radius:20px;overflow:hidden;
       box-shadow:0 16px 48px rgba(244,63,142,.4),0 4px 16px rgba(0,0,0,.5);
       border:2px solid rgba(244,63,142,.35);
@@ -935,6 +936,11 @@
       <div class="portrait-frame" id="pframe">
         <div class="blur-bg" id="blurbg"></div>
         <img id="photo-img" src="1.jpeg" alt="Kavya"/>
+        <!-- photo-arrows must stay inside frame so goPhoto insertBefore works -->
+        <div class="photo-arrows">
+          <button class="pa-btn" id="pa-prev">&#8249;</button>
+          <button class="pa-btn" id="pa-next">&#8250;</button>
+        </div>
       </div>
     </div>
 
