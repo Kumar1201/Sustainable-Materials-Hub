@@ -933,11 +933,6 @@
       <div class="portrait-frame" id="pframe">
         <div class="blur-bg" id="blurbg"></div>
         <img id="photo-img" src="1.jpeg" alt="Kavya"/>
-        <!-- photo-arrows must stay inside frame so goPhoto insertBefore works -->
-        <div class="photo-arrows">
-          <button class="pa-btn" id="pa-prev">&#8249;</button>
-          <button class="pa-btn" id="pa-next">&#8250;</button>
-        </div>
       </div>
     </div>
 
@@ -1332,9 +1327,7 @@ function goPhoto(idx){
   newImg.src = photos[photoIdx].src;
   newImg.alt = "Kavya";
   newImg.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:3;";
-  // insert before arrows so arrows stay on top
-  var arrows = frame.querySelector(".photo-arrows");
-  frame.insertBefore(newImg, arrows);
+  frame.appendChild(newImg);
 
   // ── Apply chosen transition ──
   if(trans === "slide"){
