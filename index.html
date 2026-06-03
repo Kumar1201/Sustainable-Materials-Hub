@@ -1681,6 +1681,19 @@ document.addEventListener("click",function(e){
   }
 });
 
+// ══════════════════════════
+// PRELOAD PHOTOS FOR SMOOTH SLIDESHOW
+// ══════════════════════════
+var preloadedImages = [];
+function preloadAllPhotos() {
+  photos.forEach(function(p) {
+    var img = new Image();
+    img.src = p.src;
+    preloadedImages.push(img);
+  });
+}
+preloadAllPhotos();
+
 // show nav bar once opened
 updateNavButtons(1);
 </script>
